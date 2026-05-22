@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd1push00001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_p1"]
+[ext_resource type="Script" path="res://scripts/resources/effects/push_value_effect.gd" id="2_p1"]
+
+[sub_resource type="Resource" id="PushValueEffect_p1"]
+script = ExtResource("2_p1")
+value = 1
+
+[resource]
+script = ExtResource("1_p1")
+id = &"push_1"
+title = "PUSH 1"
+description = "Push 1 onto the stack."
+cost = 0
+card_type = 1
+rarity = 0
+effects = Array[CardEffect]([SubResource("PushValueEffect_p1")])

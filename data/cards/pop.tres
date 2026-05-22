@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd4pop000001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_pp"]
+[ext_resource type="Script" path="res://scripts/resources/effects/pop_effect.gd" id="2_pp"]
+
+[sub_resource type="Resource" id="PopEffect_pp"]
+script = ExtResource("2_pp")
+
+[resource]
+script = ExtResource("1_pp")
+id = &"pop"
+title = "POP"
+description = "Discard the top value from the stack."
+cost = 0
+card_type = 0
+rarity = 0
+effects = Array[CardEffect]([SubResource("PopEffect_pp")])

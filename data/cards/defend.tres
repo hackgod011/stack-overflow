@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd6defend001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_df"]
+[ext_resource type="Script" path="res://scripts/resources/effects/gain_block_effect.gd" id="2_df"]
+
+[sub_resource type="Resource" id="GainBlockEffect_df"]
+script = ExtResource("2_df")
+amount = 5
+
+[resource]
+script = ExtResource("1_df")
+id = &"defend"
+title = "DEFEND"
+description = "Gain 5 block."
+cost = 1
+card_type = 3
+rarity = 0
+effects = Array[CardEffect]([SubResource("GainBlockEffect_df")])
