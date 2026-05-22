@@ -43,6 +43,20 @@ for debugging.
 
 ## Phase 0 — Environment & repo setup
 
+### Task 0.0 — Verify manual setup is complete
+Before doing anything else:
+- Confirm `setup.md` exists in the project folder.
+- Ask Dharm to confirm he has completed all REQUIRED items in `setup.md`
+  sections 1–5 and 8 (Godot installed, Git working, VS Code Godot extension
+  installed, GitHub repo created, project folder ready, Python available
+  for local web server).
+- Ask Dharm for: (a) the GitHub repo URL, (b) the full path to his Godot
+  executable.
+- If any required item is missing, STOP and tell Dharm what to install.
+  Do not attempt to install Godot or other GUI applications yourself.
+- **Acceptance:** Dharm confirms setup is complete and has provided the
+  GitHub repo URL and Godot path.
+
 ### Task 0.1 — Initialize the Godot project
 - Create a new Godot 4.4 project named `stack_overflow`.
 - In Project Settings:
