@@ -1,0 +1,116 @@
+[gd_scene load_steps=6 format=3 uid="uid://combat_scene_main"]
+
+[ext_resource type="Script" path="res://scripts/combat/combat_scene.gd" id="1_cs"]
+[ext_resource type="PackedScene" uid="uid://enemy_scene" path="res://scenes/combat/enemy.tscn" id="2_cs"]
+[ext_resource type="PackedScene" uid="uid://stack_zone_scene" path="res://scenes/combat/stack_zone.tscn" id="3_cs"]
+[ext_resource type="PackedScene" uid="uid://hand_scene" path="res://scenes/card/hand.tscn" id="4_cs"]
+[ext_resource type="Resource" uid="uid://null_pointer_enemy" path="res://data/enemies/null_pointer.tres" id="5_cs"]
+
+[node name="CombatScene" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_cs")
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 8
+
+[node name="EnemyArea" parent="MainLayout" instance=ExtResource("2_cs")]
+data = ExtResource("5_cs")
+
+[node name="MiddleRow" type="HBoxContainer" parent="MainLayout"]
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PlayerPanel" type="VBoxContainer" parent="MainLayout/MiddleRow"]
+custom_minimum_size = Vector2(160, 0)
+theme_override_constants/separation = 4
+
+[node name="HPLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
+text = "HP: 80/80"
+
+[node name="BlockLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
+text = "Block: 0"
+
+[node name="EnergyLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
+text = "Energy: 3/3"
+
+[node name="StackZone" parent="MainLayout/MiddleRow" instance=ExtResource("3_cs")]
+size_flags_horizontal = 3
+
+[node name="PilesPanel" type="VBoxContainer" parent="MainLayout/MiddleRow"]
+custom_minimum_size = Vector2(160, 0)
+theme_override_constants/separation = 4
+
+[node name="DrawPileLabel" type="Label" parent="MainLayout/MiddleRow/PilesPanel"]
+text = "Draw: 10"
+
+[node name="DiscardPileLabel" type="Label" parent="MainLayout/MiddleRow/PilesPanel"]
+text = "Discard: 0"
+
+[node name="Hand" parent="MainLayout" instance=ExtResource("4_cs")]
+size_flags_horizontal = 3
+
+[node name="EndTurnButton" type="Button" parent="MainLayout"]
+text = "End Turn"
+
+[node name="VictoryOverlay" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="OverlayBG" type="ColorRect" parent="VictoryOverlay"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="VictoryLabel" type="Label" parent="VictoryOverlay"]
+anchor_left = 0.5
+anchor_top = 0.4
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_right = 120.0
+text = "VICTORY!"
+horizontal_alignment = 1
+
+[node name="VictoryInfo" type="Label" parent="VictoryOverlay"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.55
+offset_left = -120.0
+offset_right = 120.0
+text = "You win!"
+horizontal_alignment = 1
+
+[node name="DefeatOverlay" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+visible = false
+
+[node name="OverlayBG" type="ColorRect" parent="DefeatOverlay"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="DefeatLabel" type="Label" parent="DefeatOverlay"]
+anchor_left = 0.5
+anchor_top = 0.4
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_right = 120.0
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="SeedLabel" type="Label" parent="DefeatOverlay"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.55
+offset_left = -120.0
+offset_right = 120.0
+text = "Seed: 0"
+horizontal_alignment = 1
