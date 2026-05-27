@@ -30,6 +30,12 @@ theme_override_constants/separation = 4
 [node name="HPLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
 text = "HP: 80/80"
 
+[node name="HPBar" type="ProgressBar" parent="MainLayout/MiddleRow/PlayerPanel"]
+custom_minimum_size = Vector2(0, 16)
+show_percentage = false
+max_value = 80
+value = 80
+
 [node name="BlockLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
 text = "Block: 0"
 

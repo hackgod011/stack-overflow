@@ -4,16 +4,24 @@
 
 [node name="StackZone" type="VBoxContainer"]
 script = ExtResource("1_stackzone")
-custom_minimum_size = Vector2(200, 400)
+custom_minimum_size = Vector2(200, 0)
 theme_override_constants/separation = 4
 
 [node name="StackLabel" type="Label" parent="."]
 text = "STACK"
 horizontal_alignment = 1
 
-[node name="CardSlots" type="VBoxContainer" parent="."]
-custom_minimum_size = Vector2(200, 300)
+[node name="CardSlots" type="Control" parent="."]
+custom_minimum_size = Vector2(200, 230)
+clip_contents = true
+
+[node name="ButtonRow" type="HBoxContainer" parent="."]
 theme_override_constants/separation = 4
 
-[node name="ExecuteButton" type="Button" parent="."]
+[node name="ClearButton" type="Button" parent="ButtonRow"]
+size_flags_horizontal = 3
+text = "Clear"
+
+[node name="ExecuteButton" type="Button" parent="ButtonRow"]
+size_flags_horizontal = 3
 text = "Execute Stack"

@@ -12,6 +12,7 @@ var _pattern_index: int = 0
 
 @onready var _name_label: Label = $NameLabel
 @onready var _hp_label: Label = $HPLabel
+@onready var _hp_bar: ProgressBar = $HPBar
 @onready var _intent_label: Label = $IntentLabel
 
 
@@ -32,6 +33,7 @@ func advance_pattern() -> void:
 
 func take_damage(amount: int) -> void:
 	_hp = max(0, _hp - amount)
+	TweenPresets.standard_tween(self).tween_property(_hp_bar, "value", float(_hp), TweenPresets.SLOW_DURATION)
 	_update_labels()
 	if _hp <= 0:
 		enemy_died.emit()
@@ -43,6 +45,8 @@ func is_dead() -> bool:
 
 func _setup() -> void:
 	_hp = data.max_hp
+	_hp_bar.max_value = data.max_hp
+	_hp_bar.value = data.max_hp
 	_name_label.text = data.name
 	_update_labels()
 

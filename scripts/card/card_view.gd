@@ -17,8 +17,19 @@ enum State { IDLE, HOVERED, DRAGGING, STACKED }
 var current_state: State = State.IDLE
 
 
+# Constants
+const HOVER_LIFT := Vector2(0.0, -32.0)
+const DEAL_DURATION := 0.25
+const DEAL_START_SCALE := Vector2(0.8, 0.8)
+const LAND_START_SCALE := Vector2(0.85, 0.85)
+
+
 # Private variables
 var _card_data: CardData
+var _original_position: Vector2
+var _original_z_index: int
+var _tween: Tween
+var _position_ready: bool = false
 
 
 # @onready variables
@@ -30,6 +41,7 @@ var _card_data: CardData
 
 # Built-in virtuals
 func _ready() -> void:
+	_original_z_index = z_index
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 
@@ -39,6 +51,7 @@ func _gui_input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 			if current_state == State.IDLE or current_state == State.HOVERED:
+				AudioManager.play_card_play()
 				card_clicked.emit(_card_data)
 
 
@@ -50,10 +63,58 @@ func set_card_data(data: CardData) -> void:
 	_description_label.text = data.description
 
 
+func animate_deal() -> void:
+	if _tween:
+		_tween.kill()
+	scale = DEAL_START_SCALE
+	_tween = TweenPresets.standard_tween(self)
+	_tween.tween_property(self, "scale", Vector2(1.0, 1.0), DEAL_DURATION)
+
+
+func animate_land() -> void:
+	if _tween:
+		_tween.kill()
+	scale = LAND_START_SCALE
+	_tween = TweenPresets.standard_tween(self)
+	_tween.tween_property(self, "scale", Vector2(1.0, 1.0), TweenPresets.STANDARD_DURATION)
+
+
+func disable() -> void:
+	if mouse_entered.is_connected(_on_mouse_entered):
+		mouse_entered.disconnect(_on_mouse_entered)
+	if mouse_exited.is_connected(_on_mouse_exited):
+		mouse_exited.disconnect(_on_mouse_exited)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+# Private methods
+func _animate_hover() -> void:
+	if _tween:
+		_tween.kill()
+	_tween = TweenPresets.standard_tween(self)
+	z_index = _original_z_index + 1
+	_tween.tween_property(self, "position", _original_position + HOVER_LIFT, TweenPresets.STANDARD_DURATION)
+	_tween.parallel().tween_property(self, "scale", Vector2(1.08, 1.08), TweenPresets.STANDARD_DURATION)
+
+
+func _animate_idle() -> void:
+	if _tween:
+		_tween.kill()
+	_tween = TweenPresets.standard_tween(self)
+	z_index = _original_z_index
+	_tween.tween_property(self, "position", _original_position, TweenPresets.STANDARD_DURATION)
+	_tween.parallel().tween_property(self, "scale", Vector2(1.0, 1.0), TweenPresets.STANDARD_DURATION)
+
+
 # Signal handlers
 func _on_mouse_entered() -> void:
+	if not _position_ready:
+		_original_position = position
+		_position_ready = true
 	current_state = State.HOVERED
+	_animate_hover()
 
 
 func _on_mouse_exited() -> void:
 	current_state = State.IDLE
+	_animate_idle()
