@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3 uid="uid://game_over_screen_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/game_over_screen.gd" id="1_go"]
+
+[node name="GameOverScreen" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_go")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.03, 0.03, 0.06, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="ContentVBox" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(400, 0)
+theme_override_constants/separation = 20
+
+[node name="ResultLabel" type="Label" parent="CenterContainer/ContentVBox"]
+horizontal_alignment = 1
+text = "GAME OVER"
+theme_override_font_sizes/font_size = 36
+
+[node name="StatsLabel" type="Label" parent="CenterContainer/ContentVBox"]
+horizontal_alignment = 1
+text = "Floors cleared: 0\nEnemies defeated: 0\nGold: 0\nDeck size: 0"
+
+[node name="SeedLabel" type="Label" parent="CenterContainer/ContentVBox"]
+horizontal_alignment = 1
+text = "Seed: 0"
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="MainMenuButton" type="Button" parent="CenterContainer/ContentVBox"]
+custom_minimum_size = Vector2(200, 44)
+text = "Main Menu"

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd17ifpos001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_ip"]
+[ext_resource type="Script" path="res://scripts/resources/effects/if_positive_effect.gd" id="2_ip"]
+
+[sub_resource type="Resource" id="IfPositiveEffect_ip"]
+script = ExtResource("2_ip")
+
+[resource]
+script = ExtResource("1_ip")
+id = &"if_positive"
+title = "IF_POS"
+description = "Skip the next card if stack top is 0 or negative."
+cost = 1
+card_type = 2
+rarity = 0
+effects = Array[CardEffect]([SubResource("IfPositiveEffect_ip")])

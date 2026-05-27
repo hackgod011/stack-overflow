@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_compiler1"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_tc"]
+
+[resource]
+script = ExtResource("1_tc")
+name = "The Compiler"
+max_hp = 120
+attack_pattern = [8, 12, 8, 20]
+min_damage_threshold = 5
+inflicts_vulnerable = 1

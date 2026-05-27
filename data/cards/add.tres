@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd12add00001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_ad"]
+[ext_resource type="Script" path="res://scripts/resources/effects/add_effect.gd" id="2_ad"]
+
+[sub_resource type="Resource" id="AddEffect_ad"]
+script = ExtResource("2_ad")
+
+[resource]
+script = ExtResource("1_ad")
+id = &"add"
+title = "ADD"
+description = "Pop two values, push their sum."
+cost = 1
+card_type = 0
+rarity = 0
+effects = Array[CardEffect]([SubResource("AddEffect_ad")])

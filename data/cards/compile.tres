@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd21comp0001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_cp"]
+[ext_resource type="Script" path="res://scripts/resources/effects/damage_per_stack_value_effect.gd" id="2_cp"]
+
+[sub_resource type="Resource" id="DamagePerStackValueEffect_cp"]
+script = ExtResource("2_cp")
+
+[resource]
+script = ExtResource("1_cp")
+id = &"compile"
+title = "COMPILE"
+description = "Deal damage equal to the sum of all stack values."
+cost = 1
+card_type = 3
+rarity = 0
+effects = Array[CardEffect]([SubResource("DamagePerStackValueEffect_cp")])

@@ -1,7 +1,7 @@
 class_name Enemy
 extends Control
 
-## Enemy scene script — manages HP, attack pattern, and label display.
+## Enemy scene script — manages HP, attack pattern, and status effects.
 
 signal enemy_died
 
@@ -9,16 +9,23 @@ signal enemy_died
 
 var _hp: int
 var _pattern_index: int = 0
+var statuses: Array[StatusEffect] = []
 
 @onready var _name_label: Label = $NameLabel
 @onready var _hp_label: Label = $HPLabel
 @onready var _hp_bar: ProgressBar = $HPBar
 @onready var _intent_label: Label = $IntentLabel
+@onready var _status_label: Label = $StatusLabel
 
 
 func _ready() -> void:
 	if data:
 		_setup()
+
+
+func setup(enemy_data: EnemyData) -> void:
+	data = enemy_data
+	_setup()
 
 
 func get_next_attack() -> int:
@@ -32,6 +39,9 @@ func advance_pattern() -> void:
 
 
 func take_damage(amount: int) -> void:
+	# Armored enemies ignore hits below their threshold
+	if data.min_damage_threshold > 0 and amount > 0 and amount < data.min_damage_threshold:
+		return
 	_hp = max(0, _hp - amount)
 	TweenPresets.standard_tween(self).tween_property(_hp_bar, "value", float(_hp), TweenPresets.SLOW_DURATION)
 	_update_labels()
@@ -39,8 +49,49 @@ func take_damage(amount: int) -> void:
 		enemy_died.emit()
 
 
+func heal(amount: int) -> void:
+	_hp = min(_hp + amount, data.max_hp)
+	TweenPresets.standard_tween(self).tween_property(_hp_bar, "value", float(_hp), TweenPresets.SLOW_DURATION)
+	_update_labels()
+
+
 func is_dead() -> bool:
 	return _hp <= 0
+
+
+func add_status(new_status: StatusEffect) -> void:
+	for existing in statuses:
+		if existing.get_script() == new_status.get_script():
+			existing.stacks += new_status.stacks
+			_update_status_display()
+			return
+	statuses.append(new_status)
+	_update_status_display()
+
+
+func get_incoming_damage_multiplier() -> float:
+	var multiplier := 1.0
+	for status in statuses:
+		multiplier *= status.get_damage_taken_multiplier()
+	return multiplier
+
+
+func get_outgoing_damage_multiplier() -> float:
+	var multiplier := 1.0
+	for status in statuses:
+		multiplier *= status.get_damage_dealt_multiplier()
+	return multiplier
+
+
+func tick_statuses() -> void:
+	for status in statuses:
+		status.tick()
+	var kept: Array[StatusEffect] = []
+	for s in statuses:
+		if not s.is_expired():
+			kept.append(s)
+	statuses = kept
+	_update_status_display()
 
 
 func _setup() -> void:
@@ -49,8 +100,24 @@ func _setup() -> void:
 	_hp_bar.value = data.max_hp
 	_name_label.text = data.name
 	_update_labels()
+	_update_status_display()
 
 
 func _update_labels() -> void:
 	_hp_label.text = "HP: %d/%d" % [_hp, data.max_hp]
-	_intent_label.text = "Next: %d" % get_next_attack()
+	var intent := "Next: %d" % get_next_attack()
+	if data.inflicts_vulnerable > 0:
+		intent += " +VUL"
+	if data.inflicts_weak > 0:
+		intent += " +WEAK"
+	_intent_label.text = intent
+
+
+func _update_status_display() -> void:
+	if statuses.is_empty():
+		_status_label.text = ""
+		return
+	var parts: Array[String] = []
+	for s in statuses:
+		parts.append("%s(%d)" % [s.get_status_name(), s.stacks])
+	_status_label.text = " ".join(parts)

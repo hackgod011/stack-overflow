@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_ker_panic"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_kp"]
+
+[resource]
+script = ExtResource("1_kp")
+name = "Kernel Panic"
+max_hp = 60
+attack_pattern = [9, 9, 16]
+inflicts_vulnerable = 2

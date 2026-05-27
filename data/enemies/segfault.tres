@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_segfault01"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_sf"]
+
+[resource]
+script = ExtResource("1_sf")
+name = "Segfault"
+max_hp = 30
+attack_pattern = [0, 0, 0, 22]

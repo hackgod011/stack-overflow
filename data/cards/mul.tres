@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd13mul00001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_ml"]
+[ext_resource type="Script" path="res://scripts/resources/effects/multiply_effect.gd" id="2_ml"]
+
+[sub_resource type="Resource" id="MultiplyEffect_ml"]
+script = ExtResource("2_ml")
+
+[resource]
+script = ExtResource("1_ml")
+id = &"mul"
+title = "MUL"
+description = "Pop two values, push their product."
+cost = 2
+card_type = 0
+rarity = 1
+effects = Array[CardEffect]([SubResource("MultiplyEffect_ml")])

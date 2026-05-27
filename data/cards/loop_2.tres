@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd15loop2001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_l2"]
+[ext_resource type="Script" path="res://scripts/resources/effects/loop_effect.gd" id="2_l2"]
+
+[sub_resource type="Resource" id="LoopEffect_l2"]
+script = ExtResource("2_l2")
+times = 2
+
+[resource]
+script = ExtResource("1_l2")
+id = &"loop_2"
+title = "LOOP 2"
+description = "The next card executes 2 extra times (3 total)."
+cost = 2
+card_type = 2
+rarity = 0
+effects = Array[CardEffect]([SubResource("LoopEffect_l2")])

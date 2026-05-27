@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_off_by_1"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_ob"]
+
+[resource]
+script = ExtResource("1_ob")
+name = "Off-by-One"
+max_hp = 22
+attack_pattern = [5, 7, 5, 7]
+inflicts_vulnerable = 1

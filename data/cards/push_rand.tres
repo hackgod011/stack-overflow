@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd09prand001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_pr"]
+[ext_resource type="Script" path="res://scripts/resources/effects/push_rand_effect.gd" id="2_pr"]
+
+[sub_resource type="Resource" id="PushRandEffect_pr"]
+script = ExtResource("2_pr")
+
+[resource]
+script = ExtResource("1_pr")
+id = &"push_rand"
+title = "PUSH RAND"
+description = "Push a random value [1-6] onto the stack."
+cost = 0
+card_type = 1
+rarity = 0
+effects = Array[CardEffect]([SubResource("PushRandEffect_pr")])

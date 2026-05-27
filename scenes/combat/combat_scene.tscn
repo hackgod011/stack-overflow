@@ -1,10 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://combat_scene_main"]
+[gd_scene load_steps=5 format=3 uid="uid://combat_scene_main"]
 
 [ext_resource type="Script" path="res://scripts/combat/combat_scene.gd" id="1_cs"]
 [ext_resource type="PackedScene" uid="uid://enemy_scene" path="res://scenes/combat/enemy.tscn" id="2_cs"]
 [ext_resource type="PackedScene" uid="uid://stack_zone_scene" path="res://scenes/combat/stack_zone.tscn" id="3_cs"]
 [ext_resource type="PackedScene" uid="uid://hand_scene" path="res://scenes/card/hand.tscn" id="4_cs"]
-[ext_resource type="Resource" uid="uid://null_pointer_enemy" path="res://data/enemies/null_pointer.tres" id="5_cs"]
 
 [node name="CombatScene" type="Control"]
 anchor_right = 1.0
@@ -17,7 +16,6 @@ anchor_bottom = 1.0
 theme_override_constants/separation = 8
 
 [node name="EnemyArea" parent="MainLayout" instance=ExtResource("2_cs")]
-data = ExtResource("5_cs")
 
 [node name="MiddleRow" type="HBoxContainer" parent="MainLayout"]
 size_flags_vertical = 3
@@ -41,6 +39,9 @@ text = "Block: 0"
 
 [node name="EnergyLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
 text = "Energy: 3/3"
+
+[node name="PlayerStatusLabel" type="Label" parent="MainLayout/MiddleRow/PlayerPanel"]
+text = ""
 
 [node name="StackZone" parent="MainLayout/MiddleRow" instance=ExtResource("3_cs")]
 size_flags_horizontal = 3
@@ -73,23 +74,32 @@ color = Color(0, 0, 0, 0.7)
 
 [node name="VictoryLabel" type="Label" parent="VictoryOverlay"]
 anchor_left = 0.5
-anchor_top = 0.4
+anchor_top = 0.38
 anchor_right = 0.5
-anchor_bottom = 0.5
+anchor_bottom = 0.46
 offset_left = -120.0
 offset_right = 120.0
 text = "VICTORY!"
 horizontal_alignment = 1
 
-[node name="VictoryInfo" type="Label" parent="VictoryOverlay"]
+[node name="VictoryGold" type="Label" parent="VictoryOverlay"]
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.48
 anchor_right = 0.5
-anchor_bottom = 0.55
+anchor_bottom = 0.54
 offset_left = -120.0
 offset_right = 120.0
-text = "You win!"
+text = "+25 Gold"
 horizontal_alignment = 1
+
+[node name="VicContinueButton" type="Button" parent="VictoryOverlay"]
+anchor_left = 0.5
+anchor_top = 0.56
+anchor_right = 0.5
+anchor_bottom = 0.64
+offset_left = -80.0
+offset_right = 80.0
+text = "Continue"
 
 [node name="DefeatOverlay" type="Control" parent="."]
 anchor_right = 1.0
@@ -120,3 +130,12 @@ offset_left = -120.0
 offset_right = 120.0
 text = "Seed: 0"
 horizontal_alignment = 1
+
+[node name="DefContinueButton" type="Button" parent="DefeatOverlay"]
+anchor_left = 0.5
+anchor_top = 0.58
+anchor_right = 0.5
+anchor_bottom = 0.66
+offset_left = -80.0
+offset_right = 80.0
+text = "Game Over"

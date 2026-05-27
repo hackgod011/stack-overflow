@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_infinite_loop"]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_il"]
+
+[resource]
+script = ExtResource("1_il")
+name = "Infinite Loop"
+max_hp = 45
+attack_pattern = [4, 4, 4, 4, 4]
+heal_per_turn = 3

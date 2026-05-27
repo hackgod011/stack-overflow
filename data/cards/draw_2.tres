@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd20draw2001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_d2"]
+[ext_resource type="Script" path="res://scripts/resources/effects/draw_cards_effect.gd" id="2_d2"]
+
+[sub_resource type="Resource" id="DrawCardsEffect_d2"]
+script = ExtResource("2_d2")
+count = 2
+
+[resource]
+script = ExtResource("1_d2")
+id = &"draw_2"
+title = "DRAW 2"
+description = "Draw 2 cards from your draw pile."
+cost = 1
+card_type = 3
+rarity = 0
+effects = Array[CardEffect]([SubResource("DrawCardsEffect_d2")])

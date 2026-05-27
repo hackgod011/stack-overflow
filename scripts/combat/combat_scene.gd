@@ -3,17 +3,16 @@ extends Control
 
 ## Top-level controller for a single combat encounter.
 ## Owns the turn loop: player turn → enemy turn → victory/defeat.
+## Reads run state from GameManager; writes back player HP, gold, enemies defeated.
 
 
 # Constants
-const STRIKE = preload("res://data/cards/strike.tres")
-const DEFEND = preload("res://data/cards/defend.tres")
-const PUSH_5 = preload("res://data/cards/push_5.tres")
-const NULL_POINTER = preload("res://data/enemies/null_pointer.tres")
 const FLOATING_NUMBER = preload("res://scenes/ui/floating_number.tscn")
 const CARD_BURST = preload("res://scenes/ui/card_burst.tscn")
+const NULL_POINTER_FALLBACK := preload("res://data/enemies/null_pointer.tres")
 const MAX_ENERGY := 3
 const DRAW_COUNT := 5
+const GOLD_PER_FIGHT := 25
 
 
 # Enum
@@ -29,6 +28,7 @@ var _energy: int = 0
 var _block: int = 0
 var _hp: int = 80
 var _resolver: StackResolver
+var _player_statuses: Array[StatusEffect] = []
 
 
 # @onready variables
@@ -39,20 +39,35 @@ var _resolver: StackResolver
 @onready var _player_hp_bar: ProgressBar = $MainLayout/MiddleRow/PlayerPanel/HPBar
 @onready var _block_label: Label = $MainLayout/MiddleRow/PlayerPanel/BlockLabel
 @onready var _energy_label: Label = $MainLayout/MiddleRow/PlayerPanel/EnergyLabel
+@onready var _player_status_label: Label = $MainLayout/MiddleRow/PlayerPanel/PlayerStatusLabel
 @onready var _draw_pile_label: Label = $MainLayout/MiddleRow/PilesPanel/DrawPileLabel
 @onready var _discard_pile_label: Label = $MainLayout/MiddleRow/PilesPanel/DiscardPileLabel
 @onready var _end_turn_button: Button = $MainLayout/EndTurnButton
 @onready var _victory_overlay: Control = $VictoryOverlay
+@onready var _victory_gold_label: Label = $VictoryOverlay/VictoryGold
+@onready var _vic_continue_button: Button = $VictoryOverlay/VicContinueButton
 @onready var _defeat_overlay: Control = $DefeatOverlay
 @onready var _defeat_seed_label: Label = $DefeatOverlay/SeedLabel
+@onready var _def_continue_button: Button = $DefeatOverlay/DefContinueButton
 
 
 # Built-in virtuals
 func _ready() -> void:
-	GameManager.start_new_run()
+	_hp = GameManager.player_hp
+	_player_hp_bar.max_value = GameManager.player_max_hp
 	_resolver = StackResolver.new()
-	_draw_pile = _build_starter_deck()
+
+	var enemy_data: EnemyData = GameManager.current_enemy_data
+	if enemy_data == null:
+		enemy_data = NULL_POINTER_FALLBACK
+	_enemy.setup(enemy_data)
+
+	if GameManager.deck.is_empty():
+		# Fallback: start a fresh run if somehow we got here without one
+		GameManager.start_new_run()
+	_draw_pile = GameManager.deck.duplicate()
 	RNG.shuffle(_draw_pile)
+
 	_victory_overlay.visible = false
 	_defeat_overlay.visible = false
 	_stack_zone.execute_requested.connect(_on_execute_requested)
@@ -60,6 +75,8 @@ func _ready() -> void:
 	_hand_node.card_play_requested.connect(_on_card_play_requested)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_enemy.enemy_died.connect(_on_enemy_died)
+	_vic_continue_button.pressed.connect(_on_vic_continue_pressed)
+	_def_continue_button.pressed.connect(_on_def_continue_pressed)
 	AudioManager.play_bgm()
 	start_player_turn()
 
@@ -74,17 +91,6 @@ func start_player_turn() -> void:
 
 
 # Private methods
-func _build_starter_deck() -> Array[CardData]:
-	var deck: Array[CardData] = []
-	for _i in 5:
-		deck.append(STRIKE)
-	for _i in 3:
-		deck.append(DEFEND)
-	for _i in 2:
-		deck.append(PUSH_5)
-	return deck
-
-
 func _draw_cards(count: int) -> void:
 	var remaining := count
 	while remaining > 0:
@@ -102,27 +108,23 @@ func _draw_cards(count: int) -> void:
 
 
 func _update_hud() -> void:
-	_hp_label.text = "HP: %d/80" % _hp
+	_hp_label.text = "HP: %d/%d" % [_hp, GameManager.player_max_hp]
 	TweenPresets.standard_tween(self).tween_property(_player_hp_bar, "value", float(_hp), TweenPresets.SLOW_DURATION)
 	_block_label.text = "Block: %d" % _block
 	_energy_label.text = "Energy: %d/%d" % [_energy, MAX_ENERGY]
 	_draw_pile_label.text = "Draw: %d" % _draw_pile.size()
 	_discard_pile_label.text = "Discard: %d" % _discard_pile.size()
+	_update_player_status_display()
 
 
-# Signal handlers
-func _on_card_play_requested(card_data: CardData) -> void:
-	if _phase != Phase.PLAYER_TURN:
+func _update_player_status_display() -> void:
+	if _player_statuses.is_empty():
+		_player_status_label.text = ""
 		return
-	if _energy < card_data.cost:
-		return
-	_energy -= card_data.cost
-	_hand_cards.erase(card_data)
-	_stack_zone.push_card(card_data)
-	_hand_node.clear()
-	for data in _hand_cards:
-		_hand_node.add_card(data)
-	_update_hud()
+	var parts: Array[String] = []
+	for s in _player_statuses:
+		parts.append("%s(%d)" % [s.get_status_name(), s.stacks])
+	_player_status_label.text = " ".join(parts)
 
 
 func _animate_block_pop() -> void:
@@ -157,6 +159,64 @@ func _spawn_burst(global_pos: Vector2, card_type: CardData.CardType) -> void:
 	burst.set_burst_color(_get_burst_color(card_type))
 
 
+func _add_player_status(new_status: StatusEffect) -> void:
+	for existing in _player_statuses:
+		if existing.get_script() == new_status.get_script():
+			existing.stacks += new_status.stacks
+			return
+	_player_statuses.append(new_status)
+
+
+func _apply_enemy_statuses_to_player() -> void:
+	if _enemy.data.inflicts_vulnerable > 0:
+		var v := VulnerableStatus.new()
+		v.stacks = _enemy.data.inflicts_vulnerable
+		_add_player_status(v)
+	if _enemy.data.inflicts_weak > 0:
+		var w := WeakStatus.new()
+		w.stacks = _enemy.data.inflicts_weak
+		_add_player_status(w)
+
+
+func _get_player_outgoing_multiplier() -> float:
+	var multiplier := 1.0
+	for status in _player_statuses:
+		multiplier *= status.get_damage_dealt_multiplier()
+	return multiplier
+
+
+func _get_player_incoming_multiplier() -> float:
+	var multiplier := 1.0
+	for status in _player_statuses:
+		multiplier *= status.get_damage_taken_multiplier()
+	return multiplier
+
+
+func _tick_player_statuses() -> void:
+	for status in _player_statuses:
+		status.tick()
+	var kept: Array[StatusEffect] = []
+	for s in _player_statuses:
+		if not s.is_expired():
+			kept.append(s)
+	_player_statuses = kept
+
+
+# Signal handlers
+func _on_card_play_requested(card_data: CardData) -> void:
+	if _phase != Phase.PLAYER_TURN:
+		return
+	if _energy < card_data.cost:
+		return
+	_energy -= card_data.cost
+	_hand_cards.erase(card_data)
+	_stack_zone.push_card(card_data)
+	_hand_node.clear()
+	for data in _hand_cards:
+		_hand_node.add_card(data)
+	_update_hud()
+
+
 func _on_clear_requested(cards: Array[CardData]) -> void:
 	if _phase != Phase.PLAYER_TURN:
 		return
@@ -177,22 +237,47 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 		"runtime_stack": [],
 		"damage_accumulator": 0,
 		"block_gain": 0,
+		"heal_amount": 0,
 		"draw_pile": _draw_pile,
 		"hand": _hand_cards,
 	}
 	context = _resolver.resolve(stack, context)
-	_enemy.take_damage(context.damage_accumulator)
-	if context.damage_accumulator > 0:
+
+	# Apply Vulnerable status from any apply_vulnerable_effect cards
+	var vul_stacks: int = context.get("vulnerable_stacks", 0)
+	if vul_stacks > 0:
+		var v := VulnerableStatus.new()
+		v.stacks = vul_stacks
+		_enemy.add_status(v)
+
+	# Calculate final damage with status multipliers
+	var effective_damage: int = int(context.damage_accumulator
+			* _enemy.get_incoming_damage_multiplier()
+			* _get_player_outgoing_multiplier())
+	_enemy.take_damage(effective_damage)
+	if effective_damage > 0:
 		AudioManager.play_enemy_hurt()
-		_spawn_number("-%d" % context.damage_accumulator, _enemy.get_global_rect().get_center(), Color.RED)
+		_spawn_number("-%d" % effective_damage, _enemy.get_global_rect().get_center(), Color.RED)
+
 	_block += context.block_gain
 	if context.block_gain > 0:
 		AudioManager.play_block_gain()
 		_animate_block_pop()
 		_spawn_number("+%d" % context.block_gain, _hp_label.get_global_rect().get_center(), Color.CYAN)
+
+	# Handle healing (capped at max HP)
+	if context.heal_amount > 0:
+		_hp = min(_hp + context.heal_amount, GameManager.player_max_hp)
+		_spawn_number("+%d" % context.heal_amount, _hp_label.get_global_rect().get_center(), Color.GREEN)
+
 	for card in stack:
 		_spawn_burst(_stack_zone.get_global_rect().get_center(), card.card_type)
 		_discard_pile.append(card)
+
+	# Refresh hand display — needed when draw effects added cards to _hand_cards
+	_hand_node.clear()
+	for data in _hand_cards:
+		_hand_node.add_card(data)
 	_update_hud()
 
 
@@ -205,24 +290,64 @@ func _on_end_turn_pressed() -> void:
 		_discard_pile.append(card)
 	_hand_cards.clear()
 	await _hand_node.discard_all_animated()
-	var attack: int = _enemy.get_next_attack()
+
+	# Enemy heals before attacking
+	if _enemy.data.heal_per_turn > 0:
+		_enemy.heal(_enemy.data.heal_per_turn)
+		_spawn_number("+%d" % _enemy.data.heal_per_turn, _enemy.get_global_rect().get_center(), Color.GREEN)
+
+	var raw_attack: int = _enemy.get_next_attack()
+	var attack: int = int(raw_attack * _enemy.get_outgoing_damage_multiplier() * _get_player_incoming_multiplier())
 	var damage: int = max(0, attack - _block)
 	_hp = max(0, _hp - damage)
 	_enemy.advance_pattern()
 	if damage > 0:
 		AudioManager.play_player_hurt()
 		_spawn_number("-%d" % damage, _hp_label.get_global_rect().get_center(), Color.RED)
+
+	# Apply statuses from enemy attacks
+	_apply_enemy_statuses_to_player()
 	_update_hud()
+
 	if _hp <= 0:
 		_phase = Phase.DEFEAT
+		GameManager.player_hp = 0
 		AudioManager.play_defeat()
 		_defeat_overlay.visible = true
 		_defeat_seed_label.text = "Seed: %d" % GameManager.current_seed
 		return
+
+	# Tick all statuses at end of the full round
+	_enemy.tick_statuses()
+	_tick_player_statuses()
 	start_player_turn()
 
 
 func _on_enemy_died() -> void:
 	_phase = Phase.VICTORY
+	GameManager.player_hp = _hp
+	GameManager.gold += GOLD_PER_FIGHT
+	GameManager.enemies_defeated += 1
+	GameManager.floors_cleared += 1
 	AudioManager.play_victory()
 	_victory_overlay.visible = true
+	var is_boss := GameManager.current_enemy_data != null and GameManager.current_enemy_data == GameManager.BOSS
+	var gold_label_text := "+%d Gold" % GOLD_PER_FIGHT
+	if is_boss:
+		gold_label_text = "You beat the Compiler!"
+	_victory_gold_label.text = gold_label_text
+
+
+func _on_vic_continue_pressed() -> void:
+	var is_boss := GameManager.current_enemy_data != null and GameManager.current_enemy_data == GameManager.BOSS
+	if is_boss:
+		GameManager.current_floor = 15
+		get_tree().change_scene_to_file(GameManager.GAME_OVER_SCENE)
+	else:
+		GameManager.current_floor += 1
+		get_tree().change_scene_to_file(GameManager.REWARD_SCENE)
+
+
+func _on_def_continue_pressed() -> void:
+	GameManager.player_hp = 0
+	get_tree().change_scene_to_file(GameManager.GAME_OVER_SCENE)

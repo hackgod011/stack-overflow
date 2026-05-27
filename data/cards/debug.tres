@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd22debug001"]
+
+[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_db"]
+[ext_resource type="Script" path="res://scripts/resources/effects/heal_effect.gd" id="2_db"]
+
+[sub_resource type="Resource" id="HealEffect_db"]
+script = ExtResource("2_db")
+amount = 4
+
+[resource]
+script = ExtResource("1_db")
+id = &"debug"
+title = "DEBUG"
+description = "Heal 4 HP."
+cost = 1
+card_type = 3
+rarity = 0
+effects = Array[CardEffect]([SubResource("HealEffect_db")])
