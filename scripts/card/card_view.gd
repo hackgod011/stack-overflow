@@ -4,6 +4,7 @@ extends Control
 ## Visual representation of a single card.
 ## Handles hover state and click emission. No gameplay rules live here.
 
+const HOLO_SHADER := preload("res://assets/shaders/holo_foil.gdshader")
 
 # Signals
 signal card_clicked(card_data: CardData)
@@ -23,6 +24,14 @@ const DEAL_DURATION := 0.25
 const DEAL_START_SCALE := Vector2(0.8, 0.8)
 const LAND_START_SCALE := Vector2(0.85, 0.85)
 
+# Per-type card background colors
+const BG_COLORS := {
+	CardData.CardType.VALUE:     Color(0.10, 0.18, 0.28),
+	CardData.CardType.OPERATION: Color(0.18, 0.10, 0.28),
+	CardData.CardType.FLOW:      Color(0.10, 0.22, 0.14),
+	CardData.CardType.EFFECT:    Color(0.28, 0.10, 0.10),
+}
+
 
 # Private variables
 var _card_data: CardData
@@ -36,6 +45,7 @@ var _position_ready: bool = false
 @onready var _background: ColorRect = $Background
 @onready var _title_label: Label = $TitleLabel
 @onready var _cost_label: Label = $CostLabel
+@onready var _art_rect: TextureRect = $ArtRect
 @onready var _description_label: Label = $DescriptionLabel
 
 
@@ -61,6 +71,25 @@ func set_card_data(data: CardData) -> void:
 	_title_label.text = data.title
 	_cost_label.text = str(data.cost)
 	_description_label.text = data.description
+
+	# Card type background color
+	if data.card_type in BG_COLORS:
+		_background.color = BG_COLORS[data.card_type]
+
+	# Holographic foil on RARE cards
+	if data.rarity == CardData.Rarity.RARE:
+		var mat := ShaderMaterial.new()
+		mat.shader = HOLO_SHADER
+		_background.material = mat
+	else:
+		_background.material = null
+
+	# Card art texture
+	if data.art != null:
+		_art_rect.texture = data.art
+		_art_rect.visible = true
+	else:
+		_art_rect.visible = false
 
 
 func animate_deal() -> void:

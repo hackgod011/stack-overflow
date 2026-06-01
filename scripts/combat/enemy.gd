@@ -3,6 +3,8 @@ extends Control
 
 ## Enemy scene script — manages HP, attack pattern, and status effects.
 
+const DAMAGE_FLASH_SHADER := preload("res://assets/shaders/damage_flash.gdshader")
+
 signal enemy_died
 
 @export var data: EnemyData
@@ -11,6 +13,9 @@ var _hp: int
 var _pattern_index: int = 0
 var statuses: Array[StatusEffect] = []
 
+var _flash_mat: ShaderMaterial
+
+@onready var _background: ColorRect = $Background
 @onready var _name_label: Label = $NameLabel
 @onready var _hp_label: Label = $HPLabel
 @onready var _hp_bar: ProgressBar = $HPBar
@@ -19,6 +24,9 @@ var statuses: Array[StatusEffect] = []
 
 
 func _ready() -> void:
+	_flash_mat = ShaderMaterial.new()
+	_flash_mat.shader = DAMAGE_FLASH_SHADER
+	_background.material = _flash_mat
 	if data:
 		_setup()
 
@@ -45,8 +53,18 @@ func take_damage(amount: int) -> void:
 	_hp = max(0, _hp - amount)
 	TweenPresets.standard_tween(self).tween_property(_hp_bar, "value", float(_hp), TweenPresets.SLOW_DURATION)
 	_update_labels()
+	flash_damage()
 	if _hp <= 0:
 		enemy_died.emit()
+
+
+func flash_damage() -> void:
+	_flash_mat.set_shader_parameter("flash_amount", 1.0)
+	var t := create_tween()
+	t.tween_method(
+		func(v: float) -> void: _flash_mat.set_shader_parameter("flash_amount", v),
+		1.0, 0.0, 0.18
+	)
 
 
 func heal(amount: int) -> void:

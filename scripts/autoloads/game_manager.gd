@@ -73,6 +73,34 @@ var is_run_active: bool = false
 signal run_started
 
 
+func _ready() -> void:
+	_setup_cursor()
+
+
+func _setup_cursor() -> void:
+	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var cur := Color(0.12, 0.95, 0.42, 1.0)
+	var dim := Color(0.06, 0.50, 0.22, 0.7)
+	# Arrow shape: left column + top row + diagonal
+	for y in 16:
+		img.set_pixel(0, y, cur)
+	for x in 12:
+		img.set_pixel(x, 0, cur)
+	for d in 12:
+		img.set_pixel(d, d, cur)
+		if d > 0:
+			img.set_pixel(d - 1, d, dim)
+			img.set_pixel(d, d - 1, dim)
+	# Fill arrow body (triangle between axes and diagonal)
+	for y in range(1, 12):
+		for x in range(1, y):
+			if img.get_pixel(x, y).a < 0.1:
+				img.set_pixel(x, y, Color(0.04, 0.18, 0.09, 0.3))
+	var tex := ImageTexture.create_from_image(img)
+	Input.set_custom_mouse_cursor(tex, Input.CURSOR_ARROW, Vector2(0, 0))
+
+
 func start_new_run(run_seed: int = -1) -> void:
 	if run_seed == -1:
 		run_seed = Time.get_ticks_msec()
@@ -87,6 +115,8 @@ func start_new_run(run_seed: int = -1) -> void:
 	current_enemy_data = null
 	is_run_active = true
 	deck = _build_starter_deck()
+	# Assign art textures to all cards in the pool (once per run start)
+	CardArtLoader.apply_art(ALL_CARDS)
 	run_started.emit()
 
 

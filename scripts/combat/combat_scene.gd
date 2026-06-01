@@ -49,6 +49,7 @@ var _player_statuses: Array[StatusEffect] = []
 @onready var _defeat_overlay: Control = $DefeatOverlay
 @onready var _defeat_seed_label: Label = $DefeatOverlay/SeedLabel
 @onready var _def_continue_button: Button = $DefeatOverlay/DefContinueButton
+@onready var _flee_button: Button = $FleeButton
 
 
 # Built-in virtuals
@@ -77,6 +78,7 @@ func _ready() -> void:
 	_enemy.enemy_died.connect(_on_enemy_died)
 	_vic_continue_button.pressed.connect(_on_vic_continue_pressed)
 	_def_continue_button.pressed.connect(_on_def_continue_pressed)
+	_flee_button.pressed.connect(_on_flee_pressed)
 	AudioManager.play_bgm()
 	start_player_turn()
 
@@ -136,6 +138,22 @@ func _spawn_number(value_text: String, global_pos: Vector2, color: Color) -> voi
 	var popup: FloatingNumber = FLOATING_NUMBER.instantiate()
 	add_child(popup)
 	popup.init_popup(value_text, global_pos, color)
+
+
+func _shake_screen(intensity: float, duration: float) -> void:
+	var shake_rng := RandomNumberGenerator.new()
+	shake_rng.randomize()
+	var start_pos := Vector2.ZERO
+	var elapsed := 0.0
+	while elapsed < duration:
+		var shake := Vector2(
+			shake_rng.randf_range(-intensity, intensity),
+			shake_rng.randf_range(-intensity, intensity)
+		)
+		position = start_pos + shake
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+	position = start_pos
 
 
 func _get_burst_color(card_type: CardData.CardType) -> Color:
@@ -232,7 +250,25 @@ func _on_clear_requested(cards: Array[CardData]) -> void:
 func _on_execute_requested(stack: Array[CardData]) -> void:
 	if _phase != Phase.PLAYER_TURN:
 		return
+	# Lock input during choreography (ENEMY_TURN blocks all player actions)
+	_phase = Phase.ENEMY_TURN
 	AudioManager.play_execute_stack()
+
+	# ---- Visual choreography: highlight each card in execution order ----
+	var views := _stack_zone.get_views_in_execution_order()
+	for i in range(views.size()):
+		var view := views[i]
+		var card: CardData = stack[i]
+		_stack_zone.highlight_view(view)
+		_spawn_burst(_stack_zone.get_global_rect().get_center(), card.card_type)
+		await get_tree().create_timer(0.25).timeout
+		_stack_zone.unhighlight_view(view)
+
+	# Small pause after last card before clearing
+	await get_tree().create_timer(0.08).timeout
+	_stack_zone.pop_all()
+
+	# ---- Logic resolution ----
 	var context: Dictionary = {
 		"runtime_stack": [],
 		"damage_accumulator": 0,
@@ -242,6 +278,9 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 		"hand": _hand_cards,
 	}
 	context = _resolver.resolve(stack, context)
+
+	for card in stack:
+		_discard_pile.append(card)
 
 	# Apply Vulnerable status from any apply_vulnerable_effect cards
 	var vul_stacks: int = context.get("vulnerable_stacks", 0)
@@ -258,6 +297,8 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 	if effective_damage > 0:
 		AudioManager.play_enemy_hurt()
 		_spawn_number("-%d" % effective_damage, _enemy.get_global_rect().get_center(), Color.RED)
+		var is_boss_hit := GameManager.current_enemy_data == GameManager.BOSS
+		_shake_screen(12.0 if is_boss_hit else 4.0, 0.18)
 
 	_block += context.block_gain
 	if context.block_gain > 0:
@@ -270,9 +311,9 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 		_hp = min(_hp + context.heal_amount, GameManager.player_max_hp)
 		_spawn_number("+%d" % context.heal_amount, _hp_label.get_global_rect().get_center(), Color.GREEN)
 
-	for card in stack:
-		_spawn_burst(_stack_zone.get_global_rect().get_center(), card.card_type)
-		_discard_pile.append(card)
+	# Restore player turn (victory overlay fires separately via enemy_died signal)
+	if _phase != Phase.VICTORY:
+		_phase = Phase.PLAYER_TURN
 
 	# Refresh hand display — needed when draw effects added cards to _hand_cards
 	_hand_node.clear()
@@ -304,6 +345,7 @@ func _on_end_turn_pressed() -> void:
 	if damage > 0:
 		AudioManager.play_player_hurt()
 		_spawn_number("-%d" % damage, _hp_label.get_global_rect().get_center(), Color.RED)
+		_shake_screen(6.0, 0.22)
 
 	# Apply statuses from enemy attacks
 	_apply_enemy_statuses_to_player()
@@ -313,6 +355,7 @@ func _on_end_turn_pressed() -> void:
 		_phase = Phase.DEFEAT
 		GameManager.player_hp = 0
 		AudioManager.play_defeat()
+		_shake_screen(20.0, 0.4)
 		_defeat_overlay.visible = true
 		_defeat_seed_label.text = "Seed: %d" % GameManager.current_seed
 		return
@@ -351,3 +394,11 @@ func _on_vic_continue_pressed() -> void:
 func _on_def_continue_pressed() -> void:
 	GameManager.player_hp = 0
 	get_tree().change_scene_to_file(GameManager.GAME_OVER_SCENE)
+
+
+func _on_flee_pressed() -> void:
+	if _phase != Phase.PLAYER_TURN:
+		return
+	AudioManager.play_button_click()
+	GameManager.player_hp = _hp
+	get_tree().change_scene_to_file(GameManager.MAP_SCENE)
