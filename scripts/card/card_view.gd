@@ -2,10 +2,17 @@ class_name CardView
 extends Control
 
 ## Visual representation of a single card.
-## Handles hover state and click emission. No gameplay rules live here.
+## Uses marcus_darius card frames as backgrounds, draws card symbol via _draw().
 
 const HOLO_SHADER := preload("res://assets/shaders/holo_foil.gdshader")
 const ART_FONT := preload("res://assets/fonts/JetBrainsMono.ttf")
+
+# Card frame textures by type
+const FRAME_RED    := preload("res://assets/card_frames/card_frame_blank_red.png")
+const FRAME_BLUE   := preload("res://assets/card_frames/card_frame_blank_blue.png")
+const FRAME_GREEN  := preload("res://assets/card_frames/card_frame_blank_green.png")
+const FRAME_YELLOW := preload("res://assets/card_frames/card_frame_blank_yellow.png")
+const FRAME_PURPLE := preload("res://assets/card_frames/card_frame_blank_purple.png")
 
 # Signals
 signal card_clicked(card_data: CardData)
@@ -24,35 +31,17 @@ const HOVER_LIFT := Vector2(0.0, -32.0)
 const DEAL_DURATION := 0.25
 const DEAL_START_SCALE := Vector2(0.8, 0.8)
 const LAND_START_SCALE := Vector2(0.85, 0.85)
-const ART_SYMBOL_SIZE := 24
+const ART_SYMBOL_SIZE := 26
 
-# Unique background color per card — visually distinct across all 22 cards
-const CARD_COLORS := {
-	&"push_1":        Color(0.05, 0.16, 0.50),
-	&"push_3":        Color(0.05, 0.24, 0.55),
-	&"push_5":        Color(0.06, 0.32, 0.58),
-	&"push_10":       Color(0.04, 0.18, 0.46),
-	&"push_rand":     Color(0.04, 0.38, 0.54),
-	&"dup":           Color(0.30, 0.08, 0.52),
-	&"pop":           Color(0.40, 0.06, 0.44),
-	&"swap":          Color(0.20, 0.06, 0.44),
-	&"rot":           Color(0.12, 0.05, 0.40),
-	&"add":           Color(0.05, 0.40, 0.17),
-	&"mul":           Color(0.04, 0.30, 0.10),
-	&"neg":           Color(0.30, 0.28, 0.04),
-	&"loop_2":        Color(0.42, 0.28, 0.03),
-	&"loop_3":        Color(0.46, 0.20, 0.03),
-	&"if_positive":   Color(0.44, 0.16, 0.03),
-	&"break":         Color(0.50, 0.10, 0.03),
-	&"strike":        Color(0.52, 0.05, 0.05),
-	&"heavy_strike":  Color(0.40, 0.03, 0.03),
-	&"defend":        Color(0.08, 0.15, 0.42),
-	&"draw_2":        Color(0.04, 0.30, 0.30),
-	&"compile":       Color(0.26, 0.08, 0.32),
-	&"debug":         Color(0.12, 0.28, 0.06),
+# Bright title color per card type (contrast on dark frame interior)
+const TYPE_TITLE_COLORS := {
+	CardData.CardType.VALUE:     Color(0.35, 0.80, 1.00),  # cyan-blue
+	CardData.CardType.OPERATION: Color(0.40, 1.00, 0.60),  # bright green
+	CardData.CardType.FLOW:      Color(1.00, 0.90, 0.25),  # golden yellow
+	CardData.CardType.EFFECT:    Color(1.00, 0.50, 0.30),  # orange-red
 }
 
-# Large readable symbol drawn in the art area for each card
+# Large symbol drawn in the art area — immediately communicates what the card does
 const CARD_SYMBOLS := {
 	&"push_1":        "PUSH 1",
 	&"push_3":        "PUSH 3",
@@ -78,6 +67,9 @@ const CARD_SYMBOLS := {
 	&"debug":         "DEBUG",
 }
 
+# Damage-dealing EFFECT cards get the red frame; utility EFFECT cards get purple
+const RED_FRAME_CARDS := [&"strike", &"heavy_strike"]
+
 
 # Private variables
 var _card_data: CardData
@@ -88,7 +80,7 @@ var _position_ready: bool = false
 
 
 # @onready variables
-@onready var _background: ColorRect = $Background
+@onready var _background: TextureRect = $Background
 @onready var _title_label: Label = $TitleLabel
 @onready var _cost_label: Label = $CostLabel
 @onready var _art_rect: TextureRect = $ArtRect
@@ -117,11 +109,10 @@ func _draw() -> void:
 	var symbol: String = CARD_SYMBOLS.get(_card_data.id, "")
 	if symbol.is_empty():
 		return
-	# Art area: offset_top=40 offset_bottom=140 → center at y=90, height=100
-	var art_center_x := size.x * 0.5
+	# Art area: top=40, bottom=140 → center y=90
 	var art_center_y := 90.0
 	var str_size := ART_FONT.get_string_size(symbol, HORIZONTAL_ALIGNMENT_LEFT, -1, ART_SYMBOL_SIZE)
-	var draw_x := art_center_x - str_size.x * 0.5
+	var draw_x := size.x * 0.5 - str_size.x * 0.5
 	var draw_y := art_center_y + float(ART_SYMBOL_SIZE) * 0.36
 	draw_string(
 		ART_FONT,
@@ -130,7 +121,7 @@ func _draw() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1,
 		ART_SYMBOL_SIZE,
-		Color(0.15, 0.95, 0.45, 0.82)
+		Color(0.20, 1.00, 0.55, 0.92)
 	)
 
 
@@ -141,16 +132,34 @@ func set_card_data(data: CardData) -> void:
 	_cost_label.text = str(data.cost)
 	_description_label.text = data.description
 
-	_background.color = CARD_COLORS.get(data.id, Color(0.12, 0.15, 0.20))
-
+	# Select frame + title color by type / rarity
+	var title_color := Color.WHITE
 	if data.rarity == CardData.Rarity.RARE:
+		_background.texture = FRAME_PURPLE
 		var mat := ShaderMaterial.new()
 		mat.shader = HOLO_SHADER
 		_background.material = mat
+		title_color = Color(1.0, 0.85, 0.25)  # gold for rares
 	else:
 		_background.material = null
+		match data.card_type:
+			CardData.CardType.VALUE:
+				_background.texture = FRAME_BLUE
+			CardData.CardType.OPERATION:
+				_background.texture = FRAME_GREEN
+			CardData.CardType.FLOW:
+				_background.texture = FRAME_YELLOW
+			CardData.CardType.EFFECT:
+				if data.id in RED_FRAME_CARDS:
+					_background.texture = FRAME_RED
+				else:
+					_background.texture = FRAME_PURPLE
+		title_color = TYPE_TITLE_COLORS.get(data.card_type, Color.WHITE)
 
-	# Art is drawn via _draw() — hide the TextureRect
+	_title_label.add_theme_color_override("font_color", title_color)
+	_cost_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.20))
+	_description_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+
 	_art_rect.visible = false
 	queue_redraw()
 
