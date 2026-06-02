@@ -170,6 +170,33 @@ func _get_burst_color(card_type: CardData.CardType) -> Color:
 			return Color.WHITE
 
 
+func _animate_card_launch(view: Control, card: CardData) -> void:
+	var start_gpos := view.global_position
+	var card_scale := _stack_zone.CARD_SCALE
+	var enemy_center := _enemy.get_global_rect().get_center()
+
+	# Phase 1: Card rises and glows (0.22s)
+	var t1 := view.create_tween().set_parallel(true)
+	t1.tween_property(view, "scale", card_scale * 1.4, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t1.tween_property(view, "global_position", start_gpos + Vector2(0.0, -62.0), 0.22)
+	t1.tween_property(view, "modulate", Color(1.6, 1.5, 0.5, 1.0), 0.22)
+	await t1.finished
+
+	# Flash white, spawn burst at card location
+	view.modulate = Color(2.5, 2.5, 2.5, 1.0)
+	_spawn_burst(view.get_global_rect().get_center(), card.card_type)
+
+	# Phase 2: Fly toward enemy, shrink, fade (0.30s)
+	var t2 := view.create_tween().set_parallel(true)
+	t2.tween_property(view, "global_position", enemy_center, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t2.tween_property(view, "scale", card_scale * 0.1, 0.30).set_ease(Tween.EASE_IN)
+	t2.tween_property(view, "modulate", Color(2.0, 2.0, 2.0, 0.0), 0.30)
+	await t2.finished
+
+	# Impact burst at enemy
+	_spawn_burst(enemy_center, card.card_type)
+
+
 func _spawn_burst(global_pos: Vector2, card_type: CardData.CardType) -> void:
 	var burst: CardBurst = CARD_BURST.instantiate()
 	add_child(burst)
@@ -254,18 +281,13 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 	_phase = Phase.ENEMY_TURN
 	AudioManager.play_execute_stack()
 
-	# ---- Visual choreography: highlight each card in execution order ----
+	# ---- Visual choreography: each card rises then flies toward enemy ----
 	var views := _stack_zone.get_views_in_execution_order()
 	for i in range(views.size()):
-		var view := views[i]
-		var card: CardData = stack[i]
-		_stack_zone.highlight_view(view)
-		_spawn_burst(_stack_zone.get_global_rect().get_center(), card.card_type)
-		await get_tree().create_timer(0.25).timeout
-		_stack_zone.unhighlight_view(view)
+		await _animate_card_launch(views[i], stack[i])
+		await get_tree().create_timer(0.08).timeout
 
-	# Small pause after last card before clearing
-	await get_tree().create_timer(0.08).timeout
+	await get_tree().create_timer(0.12).timeout
 	_stack_zone.pop_all()
 
 	# ---- Logic resolution ----

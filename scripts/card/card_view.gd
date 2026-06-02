@@ -5,6 +5,7 @@ extends Control
 ## Handles hover state and click emission. No gameplay rules live here.
 
 const HOLO_SHADER := preload("res://assets/shaders/holo_foil.gdshader")
+const ART_FONT := preload("res://assets/fonts/JetBrainsMono.ttf")
 
 # Signals
 signal card_clicked(card_data: CardData)
@@ -23,13 +24,58 @@ const HOVER_LIFT := Vector2(0.0, -32.0)
 const DEAL_DURATION := 0.25
 const DEAL_START_SCALE := Vector2(0.8, 0.8)
 const LAND_START_SCALE := Vector2(0.85, 0.85)
+const ART_SYMBOL_SIZE := 24
 
-# Per-type card background colors
-const BG_COLORS := {
-	CardData.CardType.VALUE:     Color(0.10, 0.18, 0.28),
-	CardData.CardType.OPERATION: Color(0.18, 0.10, 0.28),
-	CardData.CardType.FLOW:      Color(0.10, 0.22, 0.14),
-	CardData.CardType.EFFECT:    Color(0.28, 0.10, 0.10),
+# Unique background color per card — visually distinct across all 22 cards
+const CARD_COLORS := {
+	&"push_1":        Color(0.05, 0.16, 0.50),
+	&"push_3":        Color(0.05, 0.24, 0.55),
+	&"push_5":        Color(0.06, 0.32, 0.58),
+	&"push_10":       Color(0.04, 0.18, 0.46),
+	&"push_rand":     Color(0.04, 0.38, 0.54),
+	&"dup":           Color(0.30, 0.08, 0.52),
+	&"pop":           Color(0.40, 0.06, 0.44),
+	&"swap":          Color(0.20, 0.06, 0.44),
+	&"rot":           Color(0.12, 0.05, 0.40),
+	&"add":           Color(0.05, 0.40, 0.17),
+	&"mul":           Color(0.04, 0.30, 0.10),
+	&"neg":           Color(0.30, 0.28, 0.04),
+	&"loop_2":        Color(0.42, 0.28, 0.03),
+	&"loop_3":        Color(0.46, 0.20, 0.03),
+	&"if_positive":   Color(0.44, 0.16, 0.03),
+	&"break":         Color(0.50, 0.10, 0.03),
+	&"strike":        Color(0.52, 0.05, 0.05),
+	&"heavy_strike":  Color(0.40, 0.03, 0.03),
+	&"defend":        Color(0.08, 0.15, 0.42),
+	&"draw_2":        Color(0.04, 0.30, 0.30),
+	&"compile":       Color(0.26, 0.08, 0.32),
+	&"debug":         Color(0.12, 0.28, 0.06),
+}
+
+# Large readable symbol drawn in the art area for each card
+const CARD_SYMBOLS := {
+	&"push_1":        "PUSH 1",
+	&"push_3":        "PUSH 3",
+	&"push_5":        "PUSH 5",
+	&"push_10":       "PUSH 10",
+	&"push_rand":     "PUSH ?",
+	&"dup":           "DUP",
+	&"pop":           "POP",
+	&"swap":          "SWAP",
+	&"rot":           "ROT",
+	&"add":           "A + B",
+	&"mul":           "A * B",
+	&"neg":           "- A",
+	&"loop_2":        "LOOP 2",
+	&"loop_3":        "LOOP 3",
+	&"if_positive":   "IF > 0",
+	&"break":         "BREAK",
+	&"strike":        "STRIKE",
+	&"heavy_strike":  "HEAVY!",
+	&"defend":        "DEFEND",
+	&"draw_2":        "DRAW 2",
+	&"compile":       "COMPILE",
+	&"debug":         "DEBUG",
 }
 
 
@@ -65,6 +111,29 @@ func _gui_input(event: InputEvent) -> void:
 				card_clicked.emit(_card_data)
 
 
+func _draw() -> void:
+	if _card_data == null or size.x < 10:
+		return
+	var symbol: String = CARD_SYMBOLS.get(_card_data.id, "")
+	if symbol.is_empty():
+		return
+	# Art area: offset_top=40 offset_bottom=140 → center at y=90, height=100
+	var art_center_x := size.x * 0.5
+	var art_center_y := 90.0
+	var str_size := ART_FONT.get_string_size(symbol, HORIZONTAL_ALIGNMENT_LEFT, -1, ART_SYMBOL_SIZE)
+	var draw_x := art_center_x - str_size.x * 0.5
+	var draw_y := art_center_y + float(ART_SYMBOL_SIZE) * 0.36
+	draw_string(
+		ART_FONT,
+		Vector2(draw_x, draw_y),
+		symbol,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		ART_SYMBOL_SIZE,
+		Color(0.15, 0.95, 0.45, 0.82)
+	)
+
+
 # Public methods
 func set_card_data(data: CardData) -> void:
 	_card_data = data
@@ -72,11 +141,8 @@ func set_card_data(data: CardData) -> void:
 	_cost_label.text = str(data.cost)
 	_description_label.text = data.description
 
-	# Card type background color
-	if data.card_type in BG_COLORS:
-		_background.color = BG_COLORS[data.card_type]
+	_background.color = CARD_COLORS.get(data.id, Color(0.12, 0.15, 0.20))
 
-	# Holographic foil on RARE cards
 	if data.rarity == CardData.Rarity.RARE:
 		var mat := ShaderMaterial.new()
 		mat.shader = HOLO_SHADER
@@ -84,12 +150,9 @@ func set_card_data(data: CardData) -> void:
 	else:
 		_background.material = null
 
-	# Card art texture
-	if data.art != null:
-		_art_rect.texture = data.art
-		_art_rect.visible = true
-	else:
-		_art_rect.visible = false
+	# Art is drawn via _draw() — hide the TextureRect
+	_art_rect.visible = false
+	queue_redraw()
 
 
 func animate_deal() -> void:

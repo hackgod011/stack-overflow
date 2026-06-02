@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://enemy_scene" path="res://scenes/combat/enemy.tscn" id="2_cs"]
 [ext_resource type="PackedScene" uid="uid://stack_zone_scene" path="res://scenes/combat/stack_zone.tscn" id="3_cs"]
 [ext_resource type="PackedScene" uid="uid://hand_scene" path="res://scenes/card/hand.tscn" id="4_cs"]
-[ext_resource type="PackedScene" uid="uid://terminal_bg_scene" path="res://scenes/ui/terminal_bg.tscn" id="5_cs"]
+[ext_resource type="PackedScene" uid="uid://combat_bg_s01" path="res://scenes/ui/combat_bg.tscn" id="5_cs"]
 
 [node name="CombatScene" type="Control"]
 anchor_right = 1.0
@@ -17,7 +17,7 @@ anchor_bottom = 1.0
 color = Color(0.04, 0.06, 0.08, 1)
 mouse_filter = 2
 
-[node name="TerminalBg" parent="." instance=ExtResource("5_cs")]
+[node name="CombatBg" parent="." instance=ExtResource("5_cs")]
 
 [node name="MainLayout" type="VBoxContainer" parent="."]
 anchor_right = 1.0
