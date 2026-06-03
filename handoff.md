@@ -11,7 +11,7 @@ Build "Stack Overflow" — a roguelike deckbuilder in Godot 4.4 where cards are 
 ## Current state of the project
 
 ### Branch
-`feat/phase-2-graybox` — Phase 5 committed
+`feat/phase-2-graybox` — Phase 5 + post-phase polish committed
 
 ### Phase status
 | Phase | Status |
@@ -20,128 +20,94 @@ Build "Stack Overflow" — a roguelike deckbuilder in Godot 4.4 where cards are 
 | Phase 1 — Data layer & autoloads | ✅ COMPLETE, committed (SHA `697ea01`) |
 | Phase 2 — Graybox core loop | ✅ COMPLETE — browser verified + committed + pushed (SHA `96956fd`) |
 | Phase 3 — First juice pass | ✅ COMPLETE — browser verified + committed + pushed (SHA `0f4238c`) |
-| Phase 4 — Content depth | ✅ **COMPLETE — committed (SHA `a1b18eb`) + post-phase UI fixes applied** |
-| Phase 5 — Art & polish | ✅ **COMPLETE — committed, web export verified** |
+| Phase 4 — Content depth | ✅ COMPLETE — committed (SHA `a1b18eb`) |
+| Phase 5 — Art & polish | ✅ COMPLETE — all tasks done + extended post-phase visual polish (SHA `2d7083f`) |
 | Phase 6 — Web optimization | ⏳ **WAITING for Dharm approval** |
 
 ### Phase 5 task status
 | Task | Description | Status |
 |------|-------------|--------|
-| 5.1 | Holographic foil shader for RARE cards | ✅ Done |
+| 5.1 | Holographic foil shader for RARE cards | ✅ Done — alpha overlay approach; frame boundaries preserved |
 | 5.2 | Glow shader on Execute button (pulsing green glow) | ✅ Done |
 | 5.3 | Damage flash shader on enemy (white flash on hit) | ✅ Done |
 | 5.4 | Screen shake on impacts (4/6/12/20px by context) | ✅ Done |
-| 5.5 | Stack execution choreography (0.25s per card, highlight+burst) | ✅ Done |
+| 5.5 | Stack execution choreography (rise 62px → flash → fly to enemy → impact) | ✅ Done |
 | 5.6 | Typography pass (JetBrains Mono body, PressStart2P title) | ✅ Done |
-| 5.7 | Background styling (terminal code rain, map starfield, dark palette) | ✅ Done |
-| 5.8 | Card art (kerenel_Cards.png pack, 22 cards assigned via runtime loader) | ✅ Done |
+| 5.7 | Background styling (dot-grid combat bg, map starfield, dark palette) | ✅ Done |
+| 5.8 | Card art — marcus_darius pixel-art frames + per-card icons from board-game-icons/Kyrise | ✅ Done |
 | 5.9 | Custom cursor (terminal green pixel-art arrow) | ✅ Done |
 | 5.10 | Web export check | ✅ Zero errors, verified |
-| 5.11 | Commit Phase 5 | ✅ Done |
+| 5.11 | Commit Phase 5 | ✅ Done (SHA `05df348`) |
 
-### Phase 4 task status
-| Task | Description | Status |
-|------|-------------|--------|
-| 4.1 | CardEffect library — 12 new effects | ✅ Done |
-| 4.2 | Status effects: VulnerableStatus, WeakStatus | ✅ Done |
-| 4.3 | 22-card library (.tres files) | ✅ Done |
-| 4.4 | 9-enemy library (.tres files) | ✅ Done |
-| 4.5 | Run map (15 floors, sequential, seeded) | ✅ Done |
-| 4.6 | Reward screen (pick 1 of 3 cards) | ✅ Done |
-| 4.7 | Shop screen (buy cards / remove cards) | ✅ Done |
-| 4.8 | Main menu + game over screen | ✅ Done |
-| 4.9 | Web export check | ✅ Preset configured, browser verified |
-| 4.10 | Commit Phase 4 | ✅ Done |
+### Post-phase 5 polish (committed SHA `97dfadd`, `9aa113f`, `2d7083f`)
+| Item | What was done |
+|------|---------------|
+| Execute button glow | Replaced broken canvas_item shader (white on Button) with modulate-based green pulse tween |
+| Combat background | Fixed CombatBg from invisible (Control.size=0) to full-screen using get_viewport_rect(); dot radius 2.5px, alpha 0.30 |
+| Card size | Resized to 120×180 (from 180×260); fixed TextureRect expand_mode=1 (EXPAND_IGNORE_SIZE) so high-res frames don't expand the card |
+| Card layout | SIZE_SHRINK_CENTER baked into card_view.tscn root; hand alignment=1 (centred); CARD_SCALE 0.62→0.80 in stack_zone |
+| Card frames | 5 marcus_darius pixel-art frames copied to assets/card_frames/; frame assigned by card type (blue/green/yellow/red/purple) |
+| Card icons | 14 board-game-icons (64px) + Kyrise RPG icons (48px) copied to assets/card_icons/; per-card icon TextureRect in art area |
+| Holo foil | Shader refactored to alpha-based transparent overlay on a ColorRect; Background keeps plain FRAME_PURPLE so corner brackets stay crisp |
+| Reward screen | Now instantiates CardView (full frame + icon + labels) instead of custom ColorRect panel |
+| Description text | JetBrainsMono 10px, bright white, properly positioned in card's description zone |
+| Title centering | TitleLabel offset_left=0 so title centres across full card width |
 
-### What the game does right now
+---
+
+## What the game does right now
 
 **Full run loop works end-to-end:**
 - Main menu → "New Run" → Run Map → Floor combat → Reward screen → Map → Shop (floors 6, 11) → Elite (floors 9, 12) → Boss (floor 15) → Game Over
+
+**Visual state:**
+- All 22 cards display marcus_darius pixel-art frames (color-coded by type: blue=VALUE, green=OPERATION, yellow=FLOW, red=damage EFFECT, purple=utility EFFECT)
+- Each card has a relevant icon in the art area (sword for Strike/Heavy, shield for Defend, stack-high for Push, etc.)
+- RARE cards have the plain purple frame PLUS a transparent rainbow shimmer overlay (HoloOverlay ColorRect)
+- Reward screen uses the same CardView as in-game (consistent appearance)
+- Combat background: animated green dot-grid drifting upward, visible against dark teal background
+- Victory/Defeat overlays, floating damage numbers, screen shake, card launch choreography all working
 
 **Run Map:**
 - 15 floors: 8 FIGHT, 2 ELITE, 2 SHOP, 1 BOSS (The Compiler), 2 FIGHT
 - `►` green arrow marks the one unlocked floor; all future floors show grey "locked"
 - Cleared floors show grey "cleared"
-- "Quit to Menu" button top-right in title bar
 - Sequential unlock — must clear current floor to open next
 
 **Combat:**
 - Stack mechanic: PUSH values → OPERATE → STRIKE deals 6 + sum(stack) damage
 - 3 energy per turn, 5 card draw at turn start
-- Status effects: Vulnerable (+50% damage taken), Weak (-25% damage dealt), tick down per turn
-- Enemy patterns: escalating damage, healing, status infliction, min-damage threshold (boss)
-- "Flee Floor" button top-right — abandons fight, saves HP, returns to map
+- Status effects: Vulnerable (+50% damage taken), Weak (-25% damage dealt)
+- "Flee Floor" button top-right
 - Victory overlay → Continue → Reward screen
 - Defeat overlay → Continue → Game Over screen
 
-**Reward screen:** 3 random cards (60% COMMON / 30% UNCOMMON / 10% RARE), pick one or skip
+**Reward screen:** 3 random cards (60% COMMON / 30% UNCOMMON / 10% RARE) shown as full CardViews, pick one or skip
 
-**Shop screen:** 3 cards for sale (COMMON 50g / UNCOMMON 75g / RARE 100g), 2 "Remove a card" slots (75g each)
+**Shop screen:** 3 cards for sale, 2 "Remove a card" slots
 
-**Game Over screen:** shows floors cleared, enemies defeated, gold, deck size, seed; "Main Menu" button
+**Card library (22 cards):** VALUE (7), OPERATION (5), FLOW (4), EFFECT (6)
 
-**Card library (22 cards):**
-- VALUE: Push 1, Push 3, Push 5, Push 10, Push Rand, Dup, Pop
-- OPERATION: Swap, Rot, Add, Mul, Neg
-- FLOW: Loop 2, Loop 3, If Positive, Break
-- EFFECT: Strike, Heavy Strike, Defend, Draw 2, Compile, Debug
-
-**Enemy library (9 enemies):**
-- Regular (6): Null Pointer, Segfault, Infinite Loop, Race Condition, Memory Leak, Off-by-One
-- Elite (2): Kernel Panic, Stack Overflow Enemy
-- Boss (1): The Compiler (120 HP, min damage threshold, inflicts Vulnerable)
+**Enemy library (9 enemies):** 6 regular, 2 elite, 1 boss
 
 ---
 
-## Files changed in Phase 4
+## Files changed in post-Phase-5 polish sessions
 
-| File | Purpose |
-|------|---------|
-| `scripts/resources/effects/add_effect.gd` | NEW — pops two, pushes sum |
-| `scripts/resources/effects/multiply_effect.gd` | NEW — pops two, pushes product |
-| `scripts/resources/effects/swap_effect.gd` | NEW — swaps top two values |
-| `scripts/resources/effects/rot_effect.gd` | NEW — Forth ROT: a b c → b c a |
-| `scripts/resources/effects/neg_effect.gd` | NEW — negates top value |
-| `scripts/resources/effects/loop_effect.gd` | NEW — sets _loop_times context key |
-| `scripts/resources/effects/if_positive_effect.gd` | NEW — sets _skip_next if top ≤ 0 |
-| `scripts/resources/effects/break_effect.gd` | NEW — sets _break context key |
-| `scripts/resources/effects/heal_effect.gd` | NEW — adds heal_amount to context |
-| `scripts/resources/effects/push_rand_effect.gd` | NEW — pushes RNG 1–6 |
-| `scripts/resources/effects/apply_vulnerable_effect.gd` | NEW — adds vulnerable_stacks to context |
-| `scripts/resources/effects/damage_per_stack_value_effect.gd` | NEW — sums all stack values into damage |
-| `scripts/resources/status_effect.gd` | NEW — base class: stacks, tick(), is_expired(), multipliers |
-| `scripts/resources/statuses/vulnerable_status.gd` | NEW — get_damage_taken_multiplier → 1.5 |
-| `scripts/resources/statuses/weak_status.gd` | NEW — get_damage_dealt_multiplier → 0.75 |
-| `scripts/systems/stack_resolver.gd` | MODIFIED — flow control: _loop_times, _skip_next, _break |
-| `scripts/resources/enemy_data.gd` | MODIFIED — added inflicts_vulnerable/weak, min_damage_threshold, heal_per_turn |
-| `scripts/combat/enemy.gd` | MODIFIED — setup(), add_status(), multipliers, tick_statuses(), heal() |
-| `scenes/combat/enemy.tscn` | MODIFIED — added StatusLabel node |
-| `scripts/combat/combat_scene.gd` | REWRITTEN — full run-state integration, status pipeline, victory/defeat flow |
-| `scenes/combat/combat_scene.tscn` | MODIFIED — VictoryGold, Continue buttons, PlayerStatusLabel, FleeButton |
-| `scripts/autoloads/game_manager.gd` | REWRITTEN — scene constants, card/enemy pools, gold, floor types, reward/shop pickers |
-| `scripts/map/run_map.gd` | NEW — 15-floor map, sequential unlock, ► indicator, grey locked/cleared |
-| `scenes/map/run_map.tscn` | NEW — VBoxContainer layout with TopBar + ScrollContainer |
-| `scripts/ui/reward_screen.gd` | NEW — 3-card offer, pick or skip |
-| `scenes/ui/reward_screen.tscn` | NEW |
-| `scripts/ui/shop_screen.gd` | NEW — buy cards, remove cards, gold deduction |
-| `scenes/ui/shop_screen.tscn` | NEW |
-| `scripts/core/main_menu.gd` | NEW — New Run → map, Quit |
-| `scenes/core/main_menu.tscn` | NEW |
-| `scripts/ui/game_over_screen.gd` | NEW — win/lose result, stats, seed |
-| `scenes/ui/game_over_screen.tscn` | NEW |
-| `data/cards/*.tres` | 16 NEW card resource files |
-| `data/enemies/*.tres` | 8 NEW enemy resource files |
-| `project.godot` | MODIFIED — main scene → main_menu.tscn |
-
----
-
-## Deviations from spec (Phase 4)
-
-| Spec item | Deviation | Reason |
-|-----------|-----------|--------|
-| Task 4.3: card cost design | Costs assigned by Claude (Dharm: "use your judgment") | COMMON VALUE free/1, OPERATION 0-2, FLOW 0-3, EFFECT 1-2; MUL UNCOMMON cost 2 |
-| Task 4.4: enemy designs | HP/patterns/mechanics designed by Claude (Dharm: "use your judgment") | Each enemy given a thematic mechanic matching its bug metaphor |
-| Shop "remove" tool | Removes last card in deck | Simplified; no card-picker UI |
+| File | Change |
+|------|--------|
+| `scripts/card/card_view.gd` | Full rewrite — icon system, frame assignment, HoloOverlay, ArtLabel/ArtIcon split, description font |
+| `scenes/card/card_view.tscn` | New layout: Background + HoloOverlay + CostLabel + TitleLabel + ArtIcon + ArtLabel + DescriptionLabel; expand_mode=1, SIZE_SHRINK_CENTER |
+| `scripts/card/hand.gd` | Reverted bad size_flags runtime assignment; add_card is clean again |
+| `scenes/card/hand.tscn` | alignment=1 (centred), custom_minimum_size.y=190 |
+| `scripts/combat/stack_zone.gd` | CARD_SCALE 0.62→0.80 |
+| `scripts/ui/combat_bg.gd` | get_viewport_rect() instead of size; DOT_RADIUS=2.5, DOT_COLOR alpha=0.30 |
+| `scenes/ui/combat_bg.tscn` | CombatBg Control with set_anchors_preset(FULL_RECT) |
+| `scripts/ui/reward_screen.gd` | Uses CardView instances; add to tree first so _ready() fires before set_card_data() |
+| `assets/shaders/holo_foil.gdshader` | Rewritten: alpha-based transparent overlay (shimmer bands have alpha, gaps are transparent) |
+| `assets/card_frames/` | 5 marcus_darius High-Resolution frame PNGs + .import files |
+| `assets/card_icons/` | 14 icon PNGs + .import files (board-game-icons + Kyrise 48x48) |
+| `data/cards/*.tres` | `art=null` written back by Godot headless export — functionally unchanged |
 
 ---
 
@@ -159,7 +125,7 @@ Build "Stack Overflow" — a roguelike deckbuilder in Godot 4.4 where cards are 
 | Python server via Bash fails | Bash can't find python on this machine | Use PowerShell to start Python server |
 | Card hover overlap bug | `_original_position` captured in `_ready()` before HBoxContainer finishes layout | Lazy capture on first `mouse_entered` |
 | `to_local()` parse error on Control | `to_local()` is Node2D only | Use `global_pos` directly |
-| Stack cards going out of bounds | `view.size` doesn't shrink Control below scene dimensions | Use `view.scale = Vector2(0.62, 0.62)` + `clip_contents = true` |
+| Stack cards going out of bounds | `view.size` doesn't shrink Control below scene dimensions | Use `view.scale = Vector2(0.80, 0.80)` + `clip_contents = true` |
 | Stack direction inverted | Depth formula put newest card at wrong corner | Changed to `depth = i` |
 | Execute Stack fires SFX with empty stack | No guard | Added `if _stack.is_empty(): return` |
 | `Array.filter()` crashes on typed Array[StatusEffect] | Godot 4 typed array limitation | Replaced with explicit `for` loop + typed `kept` array |
@@ -168,9 +134,15 @@ Build "Stack Overflow" — a roguelike deckbuilder in Godot 4.4 where cards are 
 | `combat_scene.tscn` load_steps mismatch | Removed null_pointer ext_resource but didn't decrement count | Reduced load_steps from 6 to 5 |
 | `_loop_times` not always cleared from context | `context.erase()` inside `if extra_runs > 0` guard | Moved erase outside guard — always clears |
 | Skip branch leaks `_loop_times` | `_skip_next` branch continued without erasing `_loop_times` | Added `context.erase("_loop_times")` before `continue` |
-| QuitButton appearing in screen center | `anchor_top=0` with `offset_top=-52` places top edge at -52px (above viewport) | Set `anchor_top=1.0`; then switched to VBoxContainer layout (more reliable) |
-| Godot ignores external .gd edits | Editor caches in-memory script version | Close Godot fully and reopen, OR right-click file in Script tab → Reload |
+| QuitButton appearing in screen center | `anchor_top=0` with `offset_top=-52` places top edge at -52px | Set `anchor_top=1.0`; then switched to VBoxContainer layout |
 | Locked floors visually indistinguishable | Future floors showed full color with no button | Added grey "locked" label + dim color for all floors above current+1 |
+| Execute button white background in WebGL | ShaderMaterial on Button: TEXTURE is empty, samples white | Removed shader from Button; replaced with modulate-based green tween |
+| Combat background invisible | CombatBg Control.size = 0 when instanced outside layout container | Use get_viewport_rect() in _draw(); set_anchors_preset(FULL_RECT) in _ready() |
+| Cards oversized after frame integration | TextureRect stretch_mode=2 (KEEP) → min_size = texture native size (~550px) | Set expand_mode=1 (EXPAND_IGNORE_SIZE) + stretch_mode=0 (SCALE) |
+| Cards invisible in HBoxContainer | SIZE_SHRINK_CENTER set after add_child() triggers layout cycle before _ready(); computed rect = 0×0 | Bake size_flags into tscn root so they apply at parse time |
+| Holo RARE cards: no visible frame boundaries | holo_foil.gdshader output COLOR = vec4(opaque) ignoring TEXTURE — frame pixel-art replaced entirely | Refactored: Background keeps plain frame; HoloOverlay ColorRect runs alpha-based shimmer shader on top |
+| Card symbols invisible under Background | _draw() on parent drawn behind children; Background TextureRect covers symbols | Replaced with ArtIcon TextureRect + ArtLabel Label as children (render above Background) |
+| Reward screen cards look plain | _make_card_panel() built custom ColorRect panels, not using CardView | Rewritten to instantiate CardView; add wrapper to scene tree first so _ready() fires correctly |
 
 ---
 
@@ -178,13 +150,43 @@ Build "Stack Overflow" — a roguelike deckbuilder in Godot 4.4 where cards are 
 
 ### Phase 6 — Web optimization & cross-browser pass (WAITING FOR DHARM APPROVAL)
 
-Per `implementation_plan.md`, Phase 6 covers:
-- Measure baseline (build size, load time, frame drops)
-- Asset audit (WAV → OGG, large textures, unused assets)
-- Code optimization (event-driven over _process, node pooling)
-- Mobile UI pass (44×44 touch targets, landscape layout)
-- Cross-browser test (Chrome, Firefox, Safari, Android Chrome)
-- Custom HTML shell (branded loading screen, OG tags)
+Per `implementation_plan.md`:
+
+**Task 6.1 — Measure baseline**
+- Build size of `exports/web/` folder
+- Cold-load time in browser DevTools → Network
+- Frame time in Performance tab during 30s gameplay
+- Write results to `perf_baseline.md`
+
+**Task 6.2 — Asset audit**
+- WAV → OGG conversion for all audio
+- Textures > 1024×1024 → resize
+- Unused assets removed from export
+- Target: under 25 MB total build
+
+**Task 6.3 — Code optimization**
+- Convert _process() polling to event-driven where possible
+- Pool frequently spawned/freed nodes (floating numbers, particles)
+- Confirm all get_node() calls already use @onready
+
+**Task 6.4 — Mobile UI pass**
+- All clickable elements ≥ 44×44 px
+- Hand layout verified in 16:9 landscape on phone
+- Disable card hover-lift on touch devices
+
+**Task 6.5 — Cross-browser test**
+- Chrome desktop, Firefox desktop, Safari desktop (if available)
+- Chrome Android, Safari iOS (if available)
+- Fix any critical failures
+
+**Task 6.6 — Custom HTML shell**
+- Custom index.html template via Project → Export → Web → Custom HTML Shell
+- Branded loading screen with progress bar
+- og:image, og:title, og:description meta tags
+
+**Task 6.7 — Commit Phase 6**
+- `git commit -m "phase-6: web optimization and cross-browser support"`
+- STOP. Wait for Dharm approval.
 
 **Do NOT start Phase 6 without explicit "go ahead" from Dharm.**
 
@@ -199,12 +201,15 @@ Per `implementation_plan.md`, Phase 6 covers:
 - **No gameplay logic in view scenes** — CardView, Hand, StackZone are display/input only
 - **After every headless Godot run**, check `project.godot` — it sometimes drops `window/stretch/aspect="keep"`
 - **Godot executable:** `C:\Users\DHARM\Godot\Godot_v4.4-stable_win64.exe`
-- **Headless export:** `cd` to project root first, then `& "godot.exe" --headless --export-release "Web" "exports/web/index.html"`
+- **Headless export:** `cd` to project root first, then `& "C:\Users\DHARM\Godot\Godot_v4.4-stable_win64.exe" --headless --export-debug "Web" "exports/web/index.html"`
 - **Thread support:** must be OFF in export_presets.cfg (`variant/thread_support=false`)
-- **Python server:** start via PowerShell (`python -m http.server 8000` from `exports/web/`), NOT Bash
+- **Python server:** start via PowerShell (`Start-Process python -ArgumentList "-m","http.server","8080" -WorkingDirectory "exports/web" -WindowStyle Minimized`), NOT Bash
 - **Browser verify:** always test in incognito to avoid cache issues
 - **Godot .gd cache:** if external edits not reflected, close Godot fully and reopen — editor caches scripts in memory
 - **VBoxContainer layouts** are more reliable than hand-coded anchor values in .tscn files — prefer them for UI scenes
+- **CardView set_card_data():** always add to scene tree first (`add_child(view)`), THEN call `set_card_data()` — @onready vars require the node to be in the tree
+- **TextureRect for card frames:** must have `expand_mode = 1` (EXPAND_IGNORE_SIZE) so the high-res frame PNG doesn't force the card size to match the texture's native resolution
+- **SIZE_SHRINK_CENTER on cards:** set in the tscn root node, not at runtime after add_child — setting size_flags after add_child can cause 0×0 layout rect
 
 ## Autoloads registered in project.godot
 - `RNG` → `scripts/autoloads/rng.gd`
@@ -214,5 +219,6 @@ Per `implementation_plan.md`, Phase 6 covers:
 ## GitHub
 - Repo: https://github.com/hackgod011/stack-overflow
 - Main branch: `main` (always shippable)
-- Active branch: `feat/phase-2-graybox` (contains Phase 2 through Phase 4)
+- Active branch: `feat/phase-2-graybox` (Phase 2 through Phase 5 + polish)
+- Latest SHA: `2d7083f` — polish: card art overhaul, icons, holo fix, reward screen frames
 - Git history: clean — no Co-Authored-By in any commit
