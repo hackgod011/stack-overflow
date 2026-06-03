@@ -69,6 +69,7 @@ text = "Discard: 0"
 size_flags_horizontal = 3
 
 [node name="EndTurnButton" type="Button" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 44)
 text = "End Turn"
 
 [node name="FleeButton" type="Button" parent="."]
@@ -76,10 +77,10 @@ anchor_left = 1.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 0.0
-offset_left = -140
+offset_left = -148
 offset_top = 8
 offset_right = -8
-offset_bottom = 40
+offset_bottom = 52
 text = "Flee Floor"
 
 [node name="VictoryOverlay" type="Control" parent="."]

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<title>Stack Overflow — Roguelike Deckbuilder</title>
+
+		<!-- Social / Open Graph -->
+		<meta property="og:type"        content="website">
+		<meta property="og:title"       content="Stack Overflow — Roguelike Deckbuilder">
+		<meta property="og:description" content="A roguelike deckbuilder where cards are stack operations. PUSH, POP, DUP, STRIKE — execute the stack and destroy your enemies. Built in Godot 4.">
+		<meta property="og:image"       content="index.png">
+		<meta property="og:image:width"  content="1280">
+		<meta property="og:image:height" content="720">
+
+		<!-- Twitter card -->
+		<meta name="twitter:card"        content="summary_large_image">
+		<meta name="twitter:title"       content="Stack Overflow — Roguelike Deckbuilder">
+		<meta name="twitter:description" content="Cards are stack operations. Execute the stack. Win the run.">
+		<meta name="twitter:image"       content="index.png">
+
+		<style>
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #canvas {
+	margin: 0; padding: 0; border: 0;
+}
+
+body {
+	background-color: #080d10;
+	color: #c0ffd0;
+	font-family: 'Courier New', monospace;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+#canvas:focus { outline: none; }
+
+/* ── Loading overlay ─────────────────────────────────────── */
+#status {
+	position: absolute;
+	inset: 0;
+	background-color: #080d10;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 24px;
+	visibility: hidden;
+}
+
+/* Game title shown while loading */
+#load-title {
+	font-size: clamp(22px, 5vw, 44px);
+	font-weight: bold;
+	letter-spacing: 0.12em;
+	color: #25ff78;
+	text-shadow: 0 0 18px #25ff78cc, 0 0 40px #25ff7855;
+	animation: flicker 3.2s infinite;
+}
+
+#load-subtitle {
+	font-size: clamp(11px, 2vw, 15px);
+	color: #448860;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+}
+
+/* Green terminal progress bar */
+#status-progress {
+	width: min(420px, 70vw);
+	height: 6px;
+	appearance: none;
+	border: none;
+	border-radius: 3px;
+	background: #112218;
+	overflow: hidden;
+}
+#status-progress::-webkit-progress-bar   { background: #112218; border-radius: 3px; }
+#status-progress::-webkit-progress-value { background: #25ff78; border-radius: 3px;
+	box-shadow: 0 0 8px #25ff78; transition: width 0.2s ease; }
+#status-progress::-moz-progress-bar     { background: #25ff78; border-radius: 3px; }
+
+#load-hint {
+	font-size: 12px;
+	color: #2a5540;
+	letter-spacing: 0.1em;
+	animation: blink 1.4s step-start infinite;
+}
+
+/* Error notice */
+#status-notice {
+	display: none;
+	background: #2a0a12;
+	border: 1px solid #7a1a22;
+	border-radius: 6px;
+	color: #ffaaaa;
+	font-family: 'Courier New', monospace;
+	font-size: 13px;
+	line-height: 1.5;
+	max-width: 480px;
+	padding: 16px 20px;
+	text-align: center;
+	white-space: pre-wrap;
+}
+
+/* Splash image (hidden in our custom shell — we use CSS title instead) */
+#status-splash { display: none; }
+
+@keyframes flicker {
+	0%, 94%, 100% { opacity: 1; }
+	95%            { opacity: 0.82; }
+	96%            { opacity: 1; }
+	97%            { opacity: 0.75; }
+	98%            { opacity: 1; }
+}
+
+@keyframes blink {
+	0%, 49% { opacity: 1; }
+	50%, 100% { opacity: 0; }
+}
+		</style>
+		$GODOT_HEAD_INCLUDE
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas element.
+		</canvas>
+
+		<noscript>
+			Stack Overflow requires JavaScript to run.
+		</noscript>
+
+		<div id="status">
+			<!-- hidden; we use CSS-driven title instead of a bitmap splash -->
+			<img id="status-splash" class="$GODOT_SPLASH_CLASSES" src="$GODOT_SPLASH" alt="">
+
+			<div id="load-title">STACK OVERFLOW</div>
+			<div id="load-subtitle">roguelike deckbuilder</div>
+
+			<progress id="status-progress"></progress>
+
+			<div id="load-hint">[ LOADING ]</div>
+			<div id="status-notice"></div>
+		</div>
+
+		<script src="$GODOT_URL"></script>
+		<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay  = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice   = document.getElementById('status-notice');
+	const loadHint       = document.getElementById('load-hint');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) return;
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display   = mode === 'notice'   ? 'block' : 'none';
+		loadHint.style.display       = mode === 'progress' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		statusNotice.textContent = text;
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		setStatusNotice(err instanceof Error ? err.message : String(err));
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) return Promise.reject(new Error('Service worker already exists.'));
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				new Promise((resolve) => { setTimeout(() => resolve(), 2000); }),
+			]).then(() => {
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			displayFailureNotice('Error\nMissing browser features:\n' + missing.join('\n'));
+		}
+	} else {
+		setStatusMode('progress');
+		engine.startGame({
+			onProgress(current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max   = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
+</html>

@@ -95,17 +95,21 @@ var _position_ready: bool = false
 
 func _ready() -> void:
 	_original_z_index = z_index
-	mouse_entered.connect(_on_mouse_entered)
-	mouse_exited.connect(_on_mouse_exited)
+	if not DisplayServer.is_touchscreen_available():
+		mouse_entered.connect(_on_mouse_entered)
+		mouse_exited.connect(_on_mouse_exited)
 
 
 func _gui_input(event: InputEvent) -> void:
+	var pressed := false
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-			if current_state == State.IDLE or current_state == State.HOVERED:
-				AudioManager.play_card_play()
-				card_clicked.emit(_card_data)
+		pressed = mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT
+	elif event is InputEventScreenTouch:
+		pressed = (event as InputEventScreenTouch).pressed
+	if pressed and (current_state == State.IDLE or current_state == State.HOVERED):
+		AudioManager.play_card_play()
+		card_clicked.emit(_card_data)
 
 
 func set_card_data(data: CardData) -> void:
@@ -194,6 +198,7 @@ func disable() -> void:
 	if mouse_exited.is_connected(_on_mouse_exited):
 		mouse_exited.disconnect(_on_mouse_exited)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	current_state = State.IDLE
 
 
 func _animate_hover() -> void:

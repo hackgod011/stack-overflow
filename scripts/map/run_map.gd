@@ -73,6 +73,7 @@ func _create_floor_row(floor: int) -> Control:
 	elif is_available:
 		var btn := Button.new()
 		btn.text = "Enter →"
+		btn.custom_minimum_size = Vector2(100, 44)
 		btn.pressed.connect(_on_floor_entered.bind(floor))
 		row.add_child(btn)
 

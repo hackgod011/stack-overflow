@@ -9,21 +9,35 @@ const _SFX_BLOCK_GAIN := preload("res://assets/audio/sfx/block_gain.ogg")
 const _SFX_ENEMY_HURT := preload("res://assets/audio/sfx/enemy_hurt.ogg")
 const _SFX_PLAYER_HURT := preload("res://assets/audio/sfx/player_hurt.ogg")
 const _SFX_EXECUTE_STACK := preload("res://assets/audio/sfx/execute_stack.ogg")
-const _SFX_BUTTON_CLICK := preload("res://assets/audio/sfx/button_click.mp3")
-const _SFX_VICTORY := preload("res://assets/audio/sfx/victory.mp3")
-const _SFX_DEFEAT := preload("res://assets/audio/sfx/defeat.mp3")
-const _BGM_LOOP := preload("res://assets/audio/music/bgm_loop.wav")
+const _SFX_BUTTON_CLICK := preload("res://assets/audio/sfx/button_click.ogg")
+const _SFX_VICTORY := preload("res://assets/audio/sfx/victory.ogg")
+const _SFX_DEFEAT := preload("res://assets/audio/sfx/defeat.ogg")
+const _BGM_LOOP := preload("res://assets/audio/music/bgm_loop.ogg")
 
+
+const _SFX_POOL_SIZE := 6
 
 var _music_player: AudioStreamPlayer
+var _sfx_pool: Array[AudioStreamPlayer] = []
 
 
 func _ready() -> void:
 	_music_player = AudioStreamPlayer.new()
 	add_child(_music_player)
+	for _i in _SFX_POOL_SIZE:
+		var p := AudioStreamPlayer.new()
+		p.volume_db = -8.0
+		add_child(p)
+		_sfx_pool.append(p)
 
 
 func play_sfx(stream: AudioStream) -> void:
+	for player in _sfx_pool:
+		if not player.playing:
+			player.stream = stream
+			player.play()
+			return
+	# All slots busy — create a temporary one-shot player as fallback
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
 	player.volume_db = -8.0

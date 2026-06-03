@@ -13,6 +13,8 @@ const NULL_POINTER_FALLBACK := preload("res://data/enemies/null_pointer.tres")
 const MAX_ENERGY := 3
 const DRAW_COUNT := 5
 const GOLD_PER_FIGHT := 25
+const _POPUP_POOL_SIZE := 8
+const _BURST_POOL_SIZE := 6
 
 
 # Enum
@@ -29,6 +31,8 @@ var _block: int = 0
 var _hp: int = 80
 var _resolver: StackResolver
 var _player_statuses: Array[StatusEffect] = []
+var _popup_pool: Array[FloatingNumber] = []
+var _burst_pool: Array[CardBurst] = []
 
 
 # @onready variables
@@ -79,6 +83,7 @@ func _ready() -> void:
 	_vic_continue_button.pressed.connect(_on_vic_continue_pressed)
 	_def_continue_button.pressed.connect(_on_def_continue_pressed)
 	_flee_button.pressed.connect(_on_flee_pressed)
+	_init_pools()
 	AudioManager.play_bgm()
 	start_player_turn()
 
@@ -134,10 +139,38 @@ func _animate_block_pop() -> void:
 	TweenPresets.standard_tween(_block_label).tween_property(_block_label, "scale", Vector2(1.0, 1.0), TweenPresets.SNAP_DURATION)
 
 
+func _init_pools() -> void:
+	for _i in _POPUP_POOL_SIZE:
+		var p: FloatingNumber = FLOATING_NUMBER.instantiate()
+		add_child(p)
+		p.visible = false
+		p.popup_finished.connect(_on_popup_finished)
+		_popup_pool.append(p)
+	for _i in _BURST_POOL_SIZE:
+		var b: CardBurst = CARD_BURST.instantiate()
+		add_child(b)
+		b.visible = false
+		b.burst_finished.connect(_on_burst_finished)
+		_burst_pool.append(b)
+
+
+func _on_popup_finished(popup: FloatingNumber) -> void:
+	_popup_pool.append(popup)
+
+
+func _on_burst_finished(burst: CardBurst) -> void:
+	_burst_pool.append(burst)
+
+
 func _spawn_number(value_text: String, global_pos: Vector2, color: Color) -> void:
-	var popup: FloatingNumber = FLOATING_NUMBER.instantiate()
-	add_child(popup)
-	popup.init_popup(value_text, global_pos, color)
+	var popup: FloatingNumber
+	if not _popup_pool.is_empty():
+		popup = _popup_pool.pop_back()
+	else:
+		popup = FLOATING_NUMBER.instantiate()
+		add_child(popup)
+		popup.popup_finished.connect(_on_popup_finished)
+	popup.show_popup(value_text, global_pos, color)
 
 
 func _shake_screen(intensity: float, duration: float) -> void:
@@ -198,10 +231,15 @@ func _animate_card_launch(view: Control, card: CardData) -> void:
 
 
 func _spawn_burst(global_pos: Vector2, card_type: CardData.CardType) -> void:
-	var burst: CardBurst = CARD_BURST.instantiate()
-	add_child(burst)
+	var burst: CardBurst
+	if not _burst_pool.is_empty():
+		burst = _burst_pool.pop_back()
+	else:
+		burst = CARD_BURST.instantiate()
+		add_child(burst)
+		burst.burst_finished.connect(_on_burst_finished)
 	burst.position = global_pos
-	burst.set_burst_color(_get_burst_color(card_type))
+	burst.emit_burst(_get_burst_color(card_type))
 
 
 func _add_player_status(new_status: StatusEffect) -> void:
