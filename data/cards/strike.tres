@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd5strike001"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://crd5strike001"]
 
-[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_st"]
-[ext_resource type="Script" path="res://scripts/resources/effects/deal_damage_effect.gd" id="2_st"]
+[ext_resource type="Script" uid="uid://cfoq6g310lif6" path="res://scripts/resources/card_effect.gd" id="1_ft0kp"]
+[ext_resource type="Script" uid="uid://wb1iatwaqlhc" path="res://scripts/resources/card_data.gd" id="1_st"]
+[ext_resource type="Script" uid="uid://bx2cooumu0an7" path="res://scripts/resources/effects/deal_damage_effect.gd" id="2_st"]
 
 [sub_resource type="Resource" id="DealDamageEffect_st"]
 script = ExtResource("2_st")
 amount = 6
+description = ""
 
 [resource]
 script = ExtResource("1_st")
@@ -15,4 +17,4 @@ description = "Deal 6 + stack sum damage."
 cost = 1
 card_type = 3
 rarity = 0
-effects = Array[CardEffect]([SubResource("DealDamageEffect_st")])
+effects = Array[ExtResource("1_ft0kp")]([SubResource("DealDamageEffect_st")])

@@ -4,11 +4,12 @@ extends Control
 ## Shown after winning a fight. Offers 3 cards; player picks one or skips.
 
 const CARD_OFFERS := 3
+const CARD_VIEW   := preload("res://scenes/card/card_view.tscn")
 
-@onready var _title_label: Label = $TitleLabel
-@onready var _gold_label: Label = $GoldLabel
+@onready var _title_label:    Label        = $TitleLabel
+@onready var _gold_label:     Label        = $GoldLabel
 @onready var _cards_container: HBoxContainer = $CardsContainer
-@onready var _skip_button: Button = $SkipButton
+@onready var _skip_button:    Button       = $SkipButton
 
 var _offered_cards: Array[CardData] = []
 
@@ -26,56 +27,22 @@ func _build_card_offers() -> void:
 		child.queue_free()
 
 	for card in _offered_cards:
-		var panel := _make_card_panel(card)
-		_cards_container.add_child(panel)
+		# Wrapper — VBoxContainer holds the CardView + Pick button
+		var wrapper := VBoxContainer.new()
+		wrapper.add_theme_constant_override("separation", 10)
+		wrapper.alignment = BoxContainer.ALIGNMENT_CENTER
+		_cards_container.add_child(wrapper)  # add to tree FIRST so _ready() fires in card_view
 
+		var card_view: CardView = CARD_VIEW.instantiate()
+		wrapper.add_child(card_view)         # _ready() runs → @onready vars populated
+		card_view.set_card_data(card)        # safe to call now
+		card_view.disable()                  # no hover/click — use the Pick button below
 
-func _make_card_panel(card: CardData) -> Control:
-	var root := VBoxContainer.new()
-	root.custom_minimum_size = Vector2(200, 280)
-	root.add_theme_constant_override("separation", 6)
-
-	var bg := ColorRect.new()
-	bg.color = Color(0.15, 0.15, 0.2, 1)
-	bg.custom_minimum_size = Vector2(200, 200)
-	root.add_child(bg)
-
-	var rarity_colors := {
-		CardData.Rarity.COMMON: Color.WHITE,
-		CardData.Rarity.UNCOMMON: Color(0.4, 0.7, 1.0),
-		CardData.Rarity.RARE: Color(1.0, 0.85, 0.2),
-	}
-
-	var title_lbl := Label.new()
-	title_lbl.text = card.title
-	title_lbl.add_theme_color_override("font_color", rarity_colors.get(card.rarity, Color.WHITE))
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bg.add_child(title_lbl)
-	title_lbl.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	title_lbl.offset_top = 20
-
-	var desc_lbl := Label.new()
-	desc_lbl.text = card.description
-	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
-	bg.add_child(desc_lbl)
-	desc_lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	desc_lbl.offset_left = -90
-	desc_lbl.offset_right = 90
-
-	var cost_lbl := Label.new()
-	cost_lbl.text = "Cost: %d" % card.cost
-	cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bg.add_child(cost_lbl)
-	cost_lbl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	cost_lbl.offset_bottom = -8
-
-	var pick_btn := Button.new()
-	pick_btn.text = "Pick"
-	pick_btn.pressed.connect(_on_card_picked.bind(card))
-	root.add_child(pick_btn)
-
-	return root
+		var pick_btn := Button.new()
+		pick_btn.text = "Pick"
+		pick_btn.custom_minimum_size = Vector2(120, 0)
+		pick_btn.pressed.connect(_on_card_picked.bind(card))
+		wrapper.add_child(pick_btn)
 
 
 func _on_card_picked(card: CardData) -> void:

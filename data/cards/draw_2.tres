@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd20draw2001"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://crd20draw2001"]
 
-[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_d2"]
-[ext_resource type="Script" path="res://scripts/resources/effects/draw_cards_effect.gd" id="2_d2"]
+[ext_resource type="Script" uid="uid://cfoq6g310lif6" path="res://scripts/resources/card_effect.gd" id="1_c0ofi"]
+[ext_resource type="Script" uid="uid://wb1iatwaqlhc" path="res://scripts/resources/card_data.gd" id="1_d2"]
+[ext_resource type="Script" uid="uid://d4jsophhrxqmv" path="res://scripts/resources/effects/draw_cards_effect.gd" id="2_d2"]
 
 [sub_resource type="Resource" id="DrawCardsEffect_d2"]
 script = ExtResource("2_d2")
 count = 2
+description = ""
 
 [resource]
 script = ExtResource("1_d2")
@@ -15,4 +17,4 @@ description = "Draw 2 cards from your draw pile."
 cost = 1
 card_type = 3
 rarity = 0
-effects = Array[CardEffect]([SubResource("DrawCardsEffect_d2")])
+effects = Array[ExtResource("1_c0ofi")]([SubResource("DrawCardsEffect_d2")])

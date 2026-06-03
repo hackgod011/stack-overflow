@@ -8,7 +8,7 @@ extends VBoxContainer
 
 # Constants
 const CARD_VIEW = preload("res://scenes/card/card_view.tscn")
-const CARD_SCALE := Vector2(0.62, 0.62)
+const CARD_SCALE := Vector2(0.80, 0.80)
 const STACK_OFFSET := 14.0
 
 

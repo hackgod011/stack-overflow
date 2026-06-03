@@ -1,10 +1,12 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd13mul00001"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://crd13mul00001"]
 
-[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_ml"]
-[ext_resource type="Script" path="res://scripts/resources/effects/multiply_effect.gd" id="2_ml"]
+[ext_resource type="Script" uid="uid://wb1iatwaqlhc" path="res://scripts/resources/card_data.gd" id="1_ml"]
+[ext_resource type="Script" uid="uid://cfoq6g310lif6" path="res://scripts/resources/card_effect.gd" id="1_rf7s2"]
+[ext_resource type="Script" uid="uid://knxb4x0subx0" path="res://scripts/resources/effects/multiply_effect.gd" id="2_ml"]
 
 [sub_resource type="Resource" id="MultiplyEffect_ml"]
 script = ExtResource("2_ml")
+description = ""
 
 [resource]
 script = ExtResource("1_ml")
@@ -14,4 +16,4 @@ description = "Pop two values, push their product."
 cost = 2
 card_type = 0
 rarity = 1
-effects = Array[CardEffect]([SubResource("MultiplyEffect_ml")])
+effects = Array[ExtResource("1_rf7s2")]([SubResource("MultiplyEffect_ml")])

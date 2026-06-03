@@ -4,5 +4,6 @@
 
 [node name="Hand" type="HBoxContainer"]
 script = ExtResource("1_hand")
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(0, 190)
+alignment = 1
 theme_override_constants/separation = 8

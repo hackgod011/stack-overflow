@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://crd2push00005"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://crd2push00005"]
 
-[ext_resource type="Script" path="res://scripts/resources/card_data.gd" id="1_p5"]
-[ext_resource type="Script" path="res://scripts/resources/effects/push_value_effect.gd" id="2_p5"]
+[ext_resource type="Script" uid="uid://cfoq6g310lif6" path="res://scripts/resources/card_effect.gd" id="1_88v3h"]
+[ext_resource type="Script" uid="uid://wb1iatwaqlhc" path="res://scripts/resources/card_data.gd" id="1_p5"]
+[ext_resource type="Script" uid="uid://bwwosp5f0eamt" path="res://scripts/resources/effects/push_value_effect.gd" id="2_p5"]
 
 [sub_resource type="Resource" id="PushValueEffect_p5"]
 script = ExtResource("2_p5")
 value = 5
+description = ""
 
 [resource]
 script = ExtResource("1_p5")
@@ -15,4 +17,4 @@ description = "Push 5 onto the stack."
 cost = 1
 card_type = 1
 rarity = 0
-effects = Array[CardEffect]([SubResource("PushValueEffect_p5")])
+effects = Array[ExtResource("1_88v3h")]([SubResource("PushValueEffect_p5")])
