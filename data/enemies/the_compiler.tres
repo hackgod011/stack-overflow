@@ -9,3 +9,17 @@ max_hp = 120
 attack_pattern = [8, 12, 8, 20]
 min_damage_threshold = 5
 inflicts_vulnerable = 1
+
+phase2_hp_fraction = 0.75
+phase2_attack_pattern = [10, 15, 10, 24]
+phase2_inflicts_vulnerable = 1
+phase2_inflicts_weak = 0
+phase2_heal_per_turn = 0
+phase2_min_damage_threshold = 5
+
+phase3_hp_fraction = 0.40
+phase3_attack_pattern = [12, 18, 12, 28]
+phase3_inflicts_vulnerable = 1
+phase3_inflicts_weak = 2
+phase3_heal_per_turn = 5
+phase3_min_damage_threshold = 5

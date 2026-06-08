@@ -80,6 +80,7 @@ func _ready() -> void:
 	_hand_node.card_play_requested.connect(_on_card_play_requested)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_enemy.enemy_died.connect(_on_enemy_died)
+	_enemy.phase_changed.connect(_on_enemy_phase_changed)
 	_vic_continue_button.pressed.connect(_on_vic_continue_pressed)
 	_def_continue_button.pressed.connect(_on_def_continue_pressed)
 	_flee_button.pressed.connect(_on_flee_pressed)
@@ -251,13 +252,15 @@ func _add_player_status(new_status: StatusEffect) -> void:
 
 
 func _apply_enemy_statuses_to_player() -> void:
-	if _enemy.data.inflicts_vulnerable > 0:
+	var vul := _enemy.get_inflicts_vulnerable()
+	if vul > 0:
 		var v := VulnerableStatus.new()
-		v.stacks = _enemy.data.inflicts_vulnerable
+		v.stacks = vul
 		_add_player_status(v)
-	if _enemy.data.inflicts_weak > 0:
+	var weak := _enemy.get_inflicts_weak()
+	if weak > 0:
 		var w := WeakStatus.new()
-		w.stacks = _enemy.data.inflicts_weak
+		w.stacks = weak
 		_add_player_status(w)
 
 
@@ -315,20 +318,10 @@ func _on_clear_requested(cards: Array[CardData]) -> void:
 func _on_execute_requested(stack: Array[CardData]) -> void:
 	if _phase != Phase.PLAYER_TURN:
 		return
-	# Lock input during choreography (ENEMY_TURN blocks all player actions)
 	_phase = Phase.ENEMY_TURN
 	AudioManager.play_execute_stack()
 
-	# ---- Visual choreography: each card rises then flies toward enemy ----
-	var views := _stack_zone.get_views_in_execution_order()
-	for i in range(views.size()):
-		await _animate_card_launch(views[i], stack[i])
-		await get_tree().create_timer(0.08).timeout
-
-	await get_tree().create_timer(0.12).timeout
-	_stack_zone.pop_all()
-
-	# ---- Logic resolution ----
+	# ---- Resolve full logic first (handles LOOP/IF/BREAK correctly) ----
 	var context: Dictionary = {
 		"runtime_stack": [],
 		"damage_accumulator": 0,
@@ -338,6 +331,19 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 		"hand": _hand_cards,
 	}
 	context = _resolver.resolve(stack, context)
+	var snapshots: Array = context.get("_snapshots", [])
+
+	# ---- Animate each card, show runtime_stack snapshot after each ----
+	var views := _stack_zone.get_views_in_execution_order()
+	for i in range(views.size()):
+		await _animate_card_launch(views[i], stack[i])
+		if i < snapshots.size():
+			_stack_zone.update_runtime_stack_display(snapshots[i])
+		await get_tree().create_timer(0.08).timeout
+
+	await get_tree().create_timer(0.12).timeout
+	_stack_zone.pop_all()
+	_stack_zone.clear_runtime_stack_display()
 
 	for card in stack:
 		_discard_pile.append(card)
@@ -392,10 +398,11 @@ func _on_end_turn_pressed() -> void:
 	_hand_cards.clear()
 	await _hand_node.discard_all_animated()
 
-	# Enemy heals before attacking
-	if _enemy.data.heal_per_turn > 0:
-		_enemy.heal(_enemy.data.heal_per_turn)
-		_spawn_number("+%d" % _enemy.data.heal_per_turn, _enemy.get_global_rect().get_center(), Color.GREEN)
+	# Enemy heals before attacking (uses active phase value)
+	var heal_amt := _enemy.get_heal_per_turn()
+	if heal_amt > 0:
+		_enemy.heal(heal_amt)
+		_spawn_number("+%d" % heal_amt, _enemy.get_global_rect().get_center(), Color.GREEN)
 
 	var raw_attack: int = _enemy.get_next_attack()
 	var attack: int = int(raw_attack * _enemy.get_outgoing_damage_multiplier() * _get_player_incoming_multiplier())
@@ -426,6 +433,13 @@ func _on_end_turn_pressed() -> void:
 	start_player_turn()
 
 
+func _on_enemy_phase_changed(new_phase: int) -> void:
+	var msg := "PHASE 2!" if new_phase == 2 else "ENRAGED!"
+	var color := Color(1.0, 0.7, 0.1) if new_phase == 2 else Color(1.0, 0.2, 0.2)
+	_spawn_number(msg, _enemy.get_global_rect().get_center() + Vector2(0, -40), color)
+	_shake_screen(10.0, 0.3)
+
+
 func _on_enemy_died() -> void:
 	_phase = Phase.VICTORY
 	GameManager.player_hp = _hp
@@ -443,6 +457,8 @@ func _on_enemy_died() -> void:
 
 func _on_vic_continue_pressed() -> void:
 	var is_boss := GameManager.current_enemy_data != null and GameManager.current_enemy_data == GameManager.BOSS
+	# Restore HP to full after clearing a floor
+	GameManager.player_hp = GameManager.player_max_hp
 	if is_boss:
 		GameManager.current_floor = 15
 		get_tree().change_scene_to_file(GameManager.GAME_OVER_SCENE)

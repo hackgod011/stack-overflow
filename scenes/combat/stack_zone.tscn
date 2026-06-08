@@ -11,6 +11,10 @@ theme_override_constants/separation = 4
 text = "STACK"
 horizontal_alignment = 1
 
+[node name="RuntimeStackLabel" type="Label" parent="."]
+horizontal_alignment = 1
+text = "DATA: [ ]"
+
 [node name="CardSlots" type="Control" parent="."]
 custom_minimum_size = Vector2(200, 230)
 clip_contents = true

@@ -26,6 +26,7 @@ var _pulse_tween: Tween = null
 @onready var _card_slots: Control = $CardSlots
 @onready var _execute_button: Button = $ButtonRow/ExecuteButton
 @onready var _clear_button: Button = $ButtonRow/ClearButton
+@onready var _runtime_stack_label: Label = $RuntimeStackLabel
 
 
 # Built-in virtuals
@@ -68,6 +69,20 @@ func clear_stack() -> Array[CardData]:
 
 func get_stack() -> Array[CardData]:
 	return _stack.duplicate()
+
+
+func update_runtime_stack_display(runtime_stack: Array) -> void:
+	if runtime_stack.is_empty():
+		_runtime_stack_label.text = "DATA: [ ]"
+	else:
+		var parts: Array[String] = []
+		for v in runtime_stack:
+			parts.append(str(v))
+		_runtime_stack_label.text = "DATA: [%s]" % ", ".join(parts)
+
+
+func clear_runtime_stack_display() -> void:
+	_runtime_stack_label.text = "DATA: [ ]"
 
 
 func get_views_in_execution_order() -> Array[Control]:

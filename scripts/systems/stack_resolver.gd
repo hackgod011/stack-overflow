@@ -8,28 +8,35 @@ extends RefCounted
 
 
 func resolve(stack: Array[CardData], context: Dictionary) -> Dictionary:
+	## Resolves the full stack. Stores a runtime_stack snapshot after each card
+	## slot in context["_snapshots"] (Array[Array[int]]). Used by combat scene
+	## to animate step-by-step with live DATA display updates.
+	var snapshots: Array = []
 	var i := 0
 	while i < stack.size():
-		# BreakEffect set this — halt all further execution
 		if context.get("_break", false):
+			# Pad remaining slots with the current state so animation can continue
+			while snapshots.size() < stack.size():
+				snapshots.append(context.runtime_stack.duplicate())
 			break
 
-		# IfPositiveEffect set this on the previous card — skip this card
 		if context.get("_skip_next", false):
 			context.erase("_skip_next")
-			context.erase("_loop_times")  # discard any pending loop — it targeted the skipped card
+			context.erase("_loop_times")
+			snapshots.append(context.runtime_stack.duplicate())  # unchanged — card was skipped
 			i += 1
 			continue
 
-		# LoopEffect set this on the previous card — repeat this card N extra times
 		var extra_runs: int = context.get("_loop_times", 0)
-		context.erase("_loop_times")  # always clear, even if value was 0
+		context.erase("_loop_times")
 
 		for _r in (extra_runs + 1):
 			_apply_card(stack[i], context)
 
+		snapshots.append(context.runtime_stack.duplicate())
 		i += 1
 
+	context["_snapshots"] = snapshots
 	return context
 
 
