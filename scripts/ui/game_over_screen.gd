@@ -22,6 +22,23 @@ func _ready() -> void:
 	_seed_label.text = "Seed: %d" % GameManager.current_seed
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 
+	var duration := Time.get_ticks_msec() / 1000.0 - GameManager.run_start_time
+	HistoryManager.record_run(
+		GameManager.floors_cleared,
+		GameManager.enemies_defeated,
+		GameManager.total_damage_dealt,
+		GameManager.current_seed,
+		duration,
+		won,
+	)
+
+	if won:
+		AchievementManager.unlock("first_victory")
+		if duration < 300.0:
+			AchievementManager.unlock("speedrun")
+	if GameManager.deck.size() >= 20:
+		AchievementManager.unlock("deck_collector")
+
 
 func _on_main_menu_pressed() -> void:
 	AudioManager.play_button_click()

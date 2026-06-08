@@ -19,9 +19,9 @@ mouse_filter = 2
 
 [node name="TitleLabel" type="Label" parent="."]
 anchor_left = 0.5
-anchor_top = 0.18
+anchor_top = 0.10
 anchor_right = 0.5
-anchor_bottom = 0.30
+anchor_bottom = 0.22
 offset_left = -260.0
 offset_right = 260.0
 horizontal_alignment = 1
@@ -32,9 +32,9 @@ theme_override_colors/font_color = Color(0.18, 0.95, 0.45, 1)
 
 [node name="SubtitleLabel" type="Label" parent="."]
 anchor_left = 0.5
-anchor_top = 0.32
+anchor_top = 0.24
 anchor_right = 0.5
-anchor_bottom = 0.38
+anchor_bottom = 0.30
 offset_left = -200.0
 offset_right = 200.0
 horizontal_alignment = 1
@@ -43,19 +43,49 @@ theme_override_colors/font_color = Color(0.38, 0.55, 0.44, 1)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 anchor_left = 0.5
-anchor_top = 0.45
+anchor_top = 0.33
 anchor_right = 0.5
-anchor_bottom = 0.75
-offset_left = -120.0
-offset_right = 120.0
+anchor_bottom = 0.97
+offset_left = -150.0
+offset_right = 150.0
 
 [node name="MenuVBox" type="VBoxContainer" parent="CenterContainer"]
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
 [node name="NewRunButton" type="Button" parent="CenterContainer/MenuVBox"]
-custom_minimum_size = Vector2(200, 48)
+custom_minimum_size = Vector2(240, 48)
 text = "[ NEW RUN ]"
 
+[node name="SeedRow" type="VBoxContainer" parent="CenterContainer/MenuVBox"]
+visible = false
+theme_override_constants/separation = 8
+
+[node name="SeedLabel" type="Label" parent="CenterContainer/MenuVBox/SeedRow"]
+text = "ENTER SEED (blank = random):"
+theme_override_colors/font_color = Color(0.6, 0.85, 0.65, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="SeedLineEdit" type="LineEdit" parent="CenterContainer/MenuVBox/SeedRow"]
+custom_minimum_size = Vector2(240, 38)
+placeholder_text = "0"
+text = ""
+
+[node name="StartSeedButton" type="Button" parent="CenterContainer/MenuVBox/SeedRow"]
+custom_minimum_size = Vector2(240, 44)
+text = "[ START RUN ]"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MenuVBox"]
+custom_minimum_size = Vector2(240, 44)
+text = "[ SETTINGS ]"
+
+[node name="HistoryButton" type="Button" parent="CenterContainer/MenuVBox"]
+custom_minimum_size = Vector2(240, 44)
+text = "[ RUN HISTORY ]"
+
+[node name="LibraryButton" type="Button" parent="CenterContainer/MenuVBox"]
+custom_minimum_size = Vector2(240, 44)
+text = "[ CARD LIBRARY ]"
+
 [node name="QuitButton" type="Button" parent="CenterContainer/MenuVBox"]
-custom_minimum_size = Vector2(200, 48)
+custom_minimum_size = Vector2(240, 44)
 text = "[ QUIT ]"

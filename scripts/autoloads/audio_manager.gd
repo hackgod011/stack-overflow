@@ -32,15 +32,16 @@ func _ready() -> void:
 
 
 func play_sfx(stream: AudioStream) -> void:
+	var db := _sfx_db()
 	for player in _sfx_pool:
 		if not player.playing:
 			player.stream = stream
+			player.volume_db = db
 			player.play()
 			return
-	# All slots busy — create a temporary one-shot player as fallback
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
-	player.volume_db = -8.0
+	player.volume_db = db
 	player.finished.connect(player.queue_free)
 	add_child(player)
 	player.play()
@@ -48,10 +49,23 @@ func play_sfx(stream: AudioStream) -> void:
 
 func play_music(stream: AudioStream, loop: bool) -> void:
 	_music_player.stream = stream
-	_music_player.volume_db = -10.0
+	_music_player.volume_db = _music_db()
 	if loop and not _music_player.finished.is_connected(_music_player.play):
 		_music_player.finished.connect(_music_player.play)
 	_music_player.play()
+
+
+func update_music_volume() -> void:
+	if _music_player.playing:
+		_music_player.volume_db = _music_db()
+
+
+func _sfx_db() -> float:
+	return linear_to_db(clampf(SettingsManager.sfx_volume, 0.001, 1.0)) - 8.0
+
+
+func _music_db() -> float:
+	return linear_to_db(clampf(SettingsManager.music_volume, 0.001, 1.0)) - 10.0
 
 
 func play_bgm() -> void:

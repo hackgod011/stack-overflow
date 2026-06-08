@@ -10,6 +10,9 @@ const REWARD_SCENE := "res://scenes/ui/reward_screen.tscn"
 const SHOP_SCENE := "res://scenes/ui/shop_screen.tscn"
 const GAME_OVER_SCENE := "res://scenes/ui/game_over_screen.tscn"
 const MAIN_MENU_SCENE := "res://scenes/core/main_menu.tscn"
+const SETTINGS_SCENE := "res://scenes/ui/settings_screen.tscn"
+const HISTORY_SCENE := "res://scenes/ui/run_history_screen.tscn"
+const CARD_LIBRARY_SCENE := "res://scenes/ui/card_library_screen.tscn"
 
 # Starter deck cards
 const STRIKE_DATA := preload("res://data/cards/strike.tres")
@@ -66,6 +69,8 @@ var gold: int = 0
 var current_floor: int = 0
 var floors_cleared: int = 0
 var enemies_defeated: int = 0
+var total_damage_dealt: int = 0
+var run_start_time: float = 0.0
 var deck: Array[CardData] = []
 var current_enemy_data: EnemyData = null
 var is_run_active: bool = false
@@ -112,6 +117,8 @@ func start_new_run(run_seed: int = -1) -> void:
 	current_floor = 0
 	floors_cleared = 0
 	enemies_defeated = 0
+	total_damage_dealt = 0
+	run_start_time = Time.get_ticks_msec() / 1000.0
 	current_enemy_data = null
 	is_run_active = true
 	deck = _build_starter_deck()

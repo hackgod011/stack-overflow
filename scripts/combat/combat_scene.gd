@@ -29,6 +29,7 @@ var _discard_pile: Array[CardData] = []
 var _energy: int = 0
 var _block: int = 0
 var _hp: int = 80
+var _took_damage_this_floor: bool = false
 var _resolver: StackResolver
 var _player_statuses: Array[StatusEffect] = []
 var _popup_pool: Array[FloatingNumber] = []
@@ -175,6 +176,8 @@ func _spawn_number(value_text: String, global_pos: Vector2, color: Color) -> voi
 
 
 func _shake_screen(intensity: float, duration: float) -> void:
+	if SettingsManager.reduce_motion:
+		return
 	var shake_rng := RandomNumberGenerator.new()
 	shake_rng.randomize()
 	var start_pos := Vector2.ZERO
@@ -297,6 +300,8 @@ func _on_card_play_requested(card_data: CardData) -> void:
 	_energy -= card_data.cost
 	_hand_cards.erase(card_data)
 	_stack_zone.push_card(card_data)
+	if _stack_zone.get_stack().size() >= 10:
+		AchievementManager.unlock("stack_of_10")
 	_hand_node.clear()
 	for data in _hand_cards:
 		_hand_node.add_card(data)
@@ -359,7 +364,10 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 	var effective_damage: int = int(context.damage_accumulator
 			* _enemy.get_incoming_damage_multiplier()
 			* _get_player_outgoing_multiplier())
+	GameManager.total_damage_dealt += effective_damage
 	_enemy.take_damage(effective_damage)
+	if effective_damage >= 100:
+		AchievementManager.unlock("damage_dealer")
 	if effective_damage > 0:
 		AudioManager.play_enemy_hurt()
 		_spawn_number("-%d" % effective_damage, _enemy.get_global_rect().get_center(), Color.RED)
@@ -410,6 +418,7 @@ func _on_end_turn_pressed() -> void:
 	_hp = max(0, _hp - damage)
 	_enemy.advance_pattern()
 	if damage > 0:
+		_took_damage_this_floor = true
 		AudioManager.play_player_hurt()
 		_spawn_number("-%d" % damage, _hp_label.get_global_rect().get_center(), Color.RED)
 		_shake_screen(6.0, 0.22)
@@ -452,7 +461,13 @@ func _on_enemy_died() -> void:
 	var gold_label_text := "+%d Gold" % GOLD_PER_FIGHT
 	if is_boss:
 		gold_label_text = "You beat the Compiler!"
+		AchievementManager.unlock("compiler_slain")
 	_victory_gold_label.text = gold_label_text
+	if not _took_damage_this_floor:
+		AchievementManager.unlock("perfect_floor")
+	if GameManager.gold >= 200:
+		AchievementManager.unlock("gold_hoarder")
+	_took_damage_this_floor = false
 
 
 func _on_vic_continue_pressed() -> void:
