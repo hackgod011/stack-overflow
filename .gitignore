@@ -12,3 +12,5 @@ Thumbs.db
 .vscode/
 # Unused source asset packs — referenced assets are copied into assets/ instead
 /Resources/
+# Project planning/handoff docs — kept local, not published
+*.md
