@@ -165,8 +165,8 @@ You need this to test the web build locally before uploading. You
 already have Python, so you already have one:
 
 - [ ] In PowerShell, `cd` into any folder, run:
-      `python -m http.server 8000`
-- [ ] Open http://localhost:8000 in your browser. You should see a file
+      `python -m http.server 8080`
+- [ ] Open http://localhost:8080 in your browser. You should see a file
       listing
 - [ ] Press Ctrl+C to stop it
 

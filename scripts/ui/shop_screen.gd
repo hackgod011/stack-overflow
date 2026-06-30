@@ -5,6 +5,7 @@ extends Control
 
 const SHOP_CARD_COUNT := 3
 const REMOVE_COST := 75
+const CARD_VIEW := preload("res://scenes/card/card_view.tscn")
 
 const CARD_PRICES := {
 	CardData.Rarity.COMMON: 50,
@@ -37,7 +38,7 @@ func _build_shop() -> void:
 		child.queue_free()
 	for card in _shop_cards:
 		var price: int = CARD_PRICES.get(card.rarity, 50)
-		_cards_container.add_child(_make_card_panel(card, price))
+		_make_card_panel(card, price)
 
 
 func _build_remove_slots() -> void:
@@ -47,53 +48,24 @@ func _build_remove_slots() -> void:
 		_remove_container.add_child(_make_remove_panel())
 
 
-func _make_card_panel(card: CardData, price: int) -> Control:
+func _make_card_panel(card: CardData, price: int) -> void:
+	# Wrapper holds a real CardView (same art/frame as in-combat cards) + Buy button.
 	var root := VBoxContainer.new()
-	root.custom_minimum_size = Vector2(200, 300)
-	root.add_theme_constant_override("separation", 6)
+	root.add_theme_constant_override("separation", 10)
+	root.alignment = BoxContainer.ALIGNMENT_CENTER
+	_cards_container.add_child(root)  # add to tree FIRST so CardView's @onready vars populate
 
-	var bg := ColorRect.new()
-	bg.color = Color(0.15, 0.15, 0.2, 1)
-	bg.custom_minimum_size = Vector2(200, 200)
-	root.add_child(bg)
-
-	var rarity_colors := {
-		CardData.Rarity.COMMON: Color.WHITE,
-		CardData.Rarity.UNCOMMON: Color(0.4, 0.7, 1.0),
-		CardData.Rarity.RARE: Color(1.0, 0.85, 0.2),
-	}
-
-	var title_lbl := Label.new()
-	title_lbl.text = card.title
-	title_lbl.add_theme_color_override("font_color", rarity_colors.get(card.rarity, Color.WHITE))
-	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bg.add_child(title_lbl)
-	title_lbl.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	title_lbl.offset_top = 20
-
-	var desc_lbl := Label.new()
-	desc_lbl.text = card.description
-	desc_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
-	bg.add_child(desc_lbl)
-	desc_lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	desc_lbl.offset_left = -90
-	desc_lbl.offset_right = 90
-
-	var cost_lbl := Label.new()
-	cost_lbl.text = "Cost: %d" % card.cost
-	cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bg.add_child(cost_lbl)
-	cost_lbl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	cost_lbl.offset_bottom = -8
+	var card_view: CardView = CARD_VIEW.instantiate()
+	root.add_child(card_view)          # _ready() runs → @onready vars ready
+	card_view.set_card_data(card)      # safe to call now
+	card_view.disable()                # display only; buying is via the button
 
 	var buy_btn := Button.new()
 	buy_btn.text = "Buy — %dg" % price
+	buy_btn.custom_minimum_size = Vector2(160, 44)
 	buy_btn.disabled = GameManager.gold < price
 	buy_btn.pressed.connect(_on_buy_pressed.bind(card, price, root, buy_btn))
 	root.add_child(buy_btn)
-
-	return root
 
 
 func _make_remove_panel() -> Control:
@@ -122,6 +94,7 @@ func _on_buy_pressed(card: CardData, price: int, panel: Control, btn: Button) ->
 	AudioManager.play_button_click()
 	GameManager.gold -= price
 	GameManager.deck.append(card)
+	CollectionManager.discover_card(card)
 	_shop_cards.erase(card)
 	btn.disabled = true
 	btn.text = "Sold"

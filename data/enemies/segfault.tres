@@ -1,9 +1,15 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_segfault01"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_segfault01"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_sf"]
+[ext_resource type="Texture2D" uid="uid://dy3e8t6rk8mfu" path="res://assets/sprites/enemies/segfault.png" id="2_sf"]
 
 [resource]
 script = ExtResource("1_sf")
 name = "Segfault"
 max_hp = 30
 attack_pattern = [0, 0, 0, 22]
+sprite_sheet = ExtResource("2_sf")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.0

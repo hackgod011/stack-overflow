@@ -1,9 +1,15 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://null_pointer_enemy"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://null_pointer_enemy"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_ep"]
+[ext_resource type="Texture2D" uid="uid://bimsrp1hno81x" path="res://assets/sprites/enemies/null_pointer.png" id="2_ep"]
 
 [resource]
 script = ExtResource("1_ep")
 name = "Null Pointer"
 max_hp = 30
 attack_pattern = [6, 8, 6]
+sprite_sheet = ExtResource("2_ep")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.0

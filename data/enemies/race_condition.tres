@@ -1,9 +1,15 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_race_cond"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_race_cond"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_rc"]
+[ext_resource type="Texture2D" uid="uid://csk3y4y3xsosr" path="res://assets/sprites/enemies/race_condition.png" id="2_rc"]
 
 [resource]
 script = ExtResource("1_rc")
 name = "Race Condition"
 max_hp = 28
 attack_pattern = [3, 11, 3, 11, 3, 11]
+sprite_sheet = ExtResource("2_rc")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.0

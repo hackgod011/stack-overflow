@@ -5,6 +5,21 @@ extends Resource
 @export var max_hp: int = 30
 @export var attack_pattern: Array[int] = []
 
+## --- Visual sprite (data-driven so themed art swaps in with no code change) ---
+## Sprite sheet for this enemy. A grid of `sheet_hframes` x `sheet_vframes` cells.
+@export var sprite_sheet: Texture2D
+## Grid dimensions of the sheet.
+@export var sheet_hframes: int = 4
+@export var sheet_vframes: int = 7
+## Frame indices (row * sheet_hframes + col) that make up the looping idle animation.
+@export var idle_frames: PackedInt32Array = PackedInt32Array([0, 1])
+## Seconds per idle frame.
+@export var idle_frame_time: float = 0.45
+## Render scale applied to the sprite (bosses use > 1.0 to read larger).
+@export var sprite_scale: float = 2.0
+## Per-phase tint applied to the sprite (escalation). Empty = no tint.
+@export var phase_tints: PackedColorArray = PackedColorArray()
+
 ## Turns of Vulnerable inflicted on the player each time this enemy attacks.
 @export var inflicts_vulnerable: int = 0
 ## Turns of Weak inflicted on the player each time this enemy attacks.

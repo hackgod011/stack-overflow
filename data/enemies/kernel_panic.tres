@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_ker_panic"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_ker_panic"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_kp"]
+[ext_resource type="Texture2D" uid="uid://cth5rjrtojx1t" path="res://assets/sprites/enemies/kernel_panic.png" id="2_kp"]
 
 [resource]
 script = ExtResource("1_kp")
@@ -8,3 +9,8 @@ name = "Kernel Panic"
 max_hp = 60
 attack_pattern = [9, 9, 16]
 inflicts_vulnerable = 2
+sprite_sheet = ExtResource("2_kp")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.6

@@ -52,6 +52,12 @@ offset_right = 150.0
 [node name="MenuVBox" type="VBoxContainer" parent="CenterContainer"]
 theme_override_constants/separation = 12
 
+[node name="ResumeButton" type="Button" parent="CenterContainer/MenuVBox"]
+visible = false
+custom_minimum_size = Vector2(240, 48)
+theme_override_colors/font_color = Color(0.3, 1.0, 0.45, 1)
+text = "[ RESUME RUN ]"
+
 [node name="NewRunButton" type="Button" parent="CenterContainer/MenuVBox"]
 custom_minimum_size = Vector2(240, 48)
 text = "[ NEW RUN ]"
@@ -73,6 +79,12 @@ text = ""
 [node name="StartSeedButton" type="Button" parent="CenterContainer/MenuVBox/SeedRow"]
 custom_minimum_size = Vector2(240, 44)
 text = "[ START RUN ]"
+
+[node name="AbandonButton" type="Button" parent="CenterContainer/MenuVBox"]
+visible = false
+custom_minimum_size = Vector2(240, 44)
+theme_override_colors/font_color = Color(1.0, 0.5, 0.4, 1)
+text = "[ ABANDON RUN ]"
 
 [node name="SettingsButton" type="Button" parent="CenterContainer/MenuVBox"]
 custom_minimum_size = Vector2(240, 44)

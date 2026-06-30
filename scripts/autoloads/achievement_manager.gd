@@ -75,6 +75,9 @@ func _build_toast() -> void:
 	add_child(canvas)
 
 	_toast_panel = PanelContainer.new()
+	# Purely decorative overlay — must never intercept clicks (it sits invisibly
+	# at alpha 0 over the top-right corner, where Flee/Quit buttons live).
+	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_panel.anchor_left = 1.0
 	_toast_panel.anchor_right = 1.0
 	_toast_panel.anchor_top = 0.0
@@ -87,10 +90,12 @@ func _build_toast() -> void:
 	canvas.add_child(_toast_panel)
 
 	var vbox := VBoxContainer.new()
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_theme_constant_override("separation", 4)
 	_toast_panel.add_child(vbox)
 
 	var header := Label.new()
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	header.text = "ACHIEVEMENT UNLOCKED"
 	header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2, 1.0))
 	header.add_theme_font_size_override("font_size", 11)
@@ -98,6 +103,7 @@ func _build_toast() -> void:
 	vbox.add_child(header)
 
 	_toast_label = Label.new()
+	_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_label.add_theme_color_override("font_color", Color(0.9, 1.0, 0.9, 1.0))
 	_toast_label.add_theme_font_size_override("font_size", 14)
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

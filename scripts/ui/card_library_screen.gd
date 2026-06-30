@@ -1,12 +1,13 @@
 class_name CardLibraryScreen
 extends Control
 
-## Browsable grid of all 22 cards. Accessible from the main menu.
+## Browsable grid of the cards the player has discovered. Accessible from the main menu.
 
 const CARD_VIEW := preload("res://scenes/card/card_view.tscn")
 
 @onready var _grid: GridContainer = $ScrollContainer/CardGrid
 @onready var _back_button: Button = $BackButton
+@onready var _title_label: Label = $TitleLabel
 
 
 func _ready() -> void:
@@ -15,7 +16,9 @@ func _ready() -> void:
 
 
 func _build_grid() -> void:
-	for card: CardData in GameManager.ALL_CARDS:
+	var discovered := CollectionManager.get_discovered_cards()
+	_title_label.text = "[ CARD COLLECTION  %d / %d ]" % [discovered.size(), CollectionManager.total_count()]
+	for card: CardData in discovered:
 		var view: CardView = CARD_VIEW.instantiate()
 		_grid.add_child(view)
 		view.set_card_data(card)

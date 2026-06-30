@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_off_by_1"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_off_by_1"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_ob"]
+[ext_resource type="Texture2D" uid="uid://c4n64i1mvbw2r" path="res://assets/sprites/enemies/off_by_one.png" id="2_ob"]
 
 [resource]
 script = ExtResource("1_ob")
@@ -8,3 +9,8 @@ name = "Off-by-One"
 max_hp = 22
 attack_pattern = [5, 7, 5, 7]
 inflicts_vulnerable = 1
+sprite_sheet = ExtResource("2_ob")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.0

@@ -23,14 +23,7 @@ func _ready() -> void:
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 
 	var duration := Time.get_ticks_msec() / 1000.0 - GameManager.run_start_time
-	HistoryManager.record_run(
-		GameManager.floors_cleared,
-		GameManager.enemies_defeated,
-		GameManager.total_damage_dealt,
-		GameManager.current_seed,
-		duration,
-		won,
-	)
+	GameManager.record_current_run(won)
 
 	if won:
 		AchievementManager.unlock("first_victory")

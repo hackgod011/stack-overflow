@@ -1,9 +1,15 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_mem_leak"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_mem_leak"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_ml"]
+[ext_resource type="Texture2D" uid="uid://ch1lgdxbvxkxa" path="res://assets/sprites/enemies/memory_leak.png" id="2_ml"]
 
 [resource]
 script = ExtResource("1_ml")
 name = "Memory Leak"
 max_hp = 40
 attack_pattern = [2, 4, 6, 8, 10]
+sprite_sheet = ExtResource("2_ml")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.0

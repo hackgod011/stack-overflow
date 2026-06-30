@@ -9,12 +9,15 @@ extends Control
 # Constants
 const FLOATING_NUMBER = preload("res://scenes/ui/floating_number.tscn")
 const CARD_BURST = preload("res://scenes/ui/card_burst.tscn")
+const IMPACT_FX := preload("res://Resources/UI Elements & Icons/Fantasy Battle Pack/Effects/CriticalHit.png")
 const NULL_POINTER_FALLBACK := preload("res://data/enemies/null_pointer.tres")
 const MAX_ENERGY := 3
 const DRAW_COUNT := 5
 const GOLD_PER_FIGHT := 25
 const _POPUP_POOL_SIZE := 8
 const _BURST_POOL_SIZE := 6
+## Seconds of inactivity (no playable move) before the enemy turn fires on its own.
+const AUTO_END_DELAY := 8.0
 
 
 # Enum
@@ -34,6 +37,7 @@ var _resolver: StackResolver
 var _player_statuses: Array[StatusEffect] = []
 var _popup_pool: Array[FloatingNumber] = []
 var _burst_pool: Array[CardBurst] = []
+var _auto_end_token: int = 0
 
 
 # @onready variables
@@ -97,6 +101,30 @@ func start_player_turn() -> void:
 	_block = 0
 	_draw_cards(DRAW_COUNT)
 	_update_hud()
+	_maybe_schedule_auto_end()
+
+
+## True while the player still has something to do this turn.
+func _player_has_moves() -> bool:
+	if not _stack_zone.get_stack().is_empty():
+		return true
+	if _energy > 0:
+		for c in _hand_cards:
+			if c.cost <= _energy:
+				return true
+	return false
+
+
+## When the player can no longer act, auto-trigger the enemy turn after a delay.
+## Any new player action re-invalidates the pending timer via the token.
+func _maybe_schedule_auto_end() -> void:
+	_auto_end_token += 1
+	if _phase != Phase.PLAYER_TURN or _player_has_moves():
+		return
+	var my_token := _auto_end_token
+	await get_tree().create_timer(AUTO_END_DELAY).timeout
+	if _phase == Phase.PLAYER_TURN and my_token == _auto_end_token and not _player_has_moves():
+		_on_end_turn_pressed()
 
 
 # Private methods
@@ -175,6 +203,21 @@ func _spawn_number(value_text: String, global_pos: Vector2, color: Color) -> voi
 	popup.show_popup(value_text, global_pos, color)
 
 
+## Brief impact flash where the enemy attack connects (over the player HP bar).
+func _spawn_impact(global_pos: Vector2) -> void:
+	var fx := Sprite2D.new()
+	fx.texture = IMPACT_FX
+	fx.hframes = 4
+	fx.frame = 0
+	fx.scale = Vector2(2.5, 2.5)
+	fx.z_index = 50
+	add_child(fx)
+	fx.global_position = global_pos
+	var t := create_tween()
+	t.tween_method(func(f: int) -> void: fx.frame = f, 0, 3, 0.20)
+	t.tween_callback(fx.queue_free)
+
+
 func _shake_screen(intensity: float, duration: float) -> void:
 	if SettingsManager.reduce_motion:
 		return
@@ -210,7 +253,7 @@ func _get_burst_color(card_type: CardData.CardType) -> Color:
 func _animate_card_launch(view: Control, card: CardData) -> void:
 	var start_gpos := view.global_position
 	var card_scale := _stack_zone.CARD_SCALE
-	var enemy_center := _enemy.get_global_rect().get_center()
+	var enemy_center := _enemy.get_sprite_global_center()
 
 	# Phase 1: Card rises and glows (0.22s)
 	var t1 := view.create_tween().set_parallel(true)
@@ -306,6 +349,7 @@ func _on_card_play_requested(card_data: CardData) -> void:
 	for data in _hand_cards:
 		_hand_node.add_card(data)
 	_update_hud()
+	_maybe_schedule_auto_end()
 
 
 func _on_clear_requested(cards: Array[CardData]) -> void:
@@ -318,6 +362,7 @@ func _on_clear_requested(cards: Array[CardData]) -> void:
 	for data in _hand_cards:
 		_hand_node.add_card(data)
 	_update_hud()
+	_maybe_schedule_auto_end()
 
 
 func _on_execute_requested(stack: Array[CardData]) -> void:
@@ -370,7 +415,7 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 		AchievementManager.unlock("damage_dealer")
 	if effective_damage > 0:
 		AudioManager.play_enemy_hurt()
-		_spawn_number("-%d" % effective_damage, _enemy.get_global_rect().get_center(), Color.RED)
+		_spawn_number("-%d" % effective_damage, _enemy.get_sprite_global_center(), Color.RED)
 		var is_boss_hit := GameManager.current_enemy_data == GameManager.BOSS
 		_shake_screen(12.0 if is_boss_hit else 4.0, 0.18)
 
@@ -394,6 +439,7 @@ func _on_execute_requested(stack: Array[CardData]) -> void:
 	for data in _hand_cards:
 		_hand_node.add_card(data)
 	_update_hud()
+	_maybe_schedule_auto_end()
 
 
 func _on_end_turn_pressed() -> void:
@@ -410,16 +456,22 @@ func _on_end_turn_pressed() -> void:
 	var heal_amt := _enemy.get_heal_per_turn()
 	if heal_amt > 0:
 		_enemy.heal(heal_amt)
-		_spawn_number("+%d" % heal_amt, _enemy.get_global_rect().get_center(), Color.GREEN)
+		_spawn_number("+%d" % heal_amt, _enemy.get_sprite_global_center(), Color.GREEN)
 
 	var raw_attack: int = _enemy.get_next_attack()
 	var attack: int = int(raw_attack * _enemy.get_outgoing_damage_multiplier() * _get_player_incoming_multiplier())
 	var damage: int = max(0, attack - _block)
+
+	# Play the enemy's attack swing before damage lands (skippable when charging / 0-dmg).
+	if raw_attack > 0:
+		await _enemy.play_attack()
+
 	_hp = max(0, _hp - damage)
 	_enemy.advance_pattern()
 	if damage > 0:
 		_took_damage_this_floor = true
 		AudioManager.play_player_hurt()
+		_spawn_impact(_player_hp_bar.get_global_rect().get_center())
 		_spawn_number("-%d" % damage, _hp_label.get_global_rect().get_center(), Color.RED)
 		_shake_screen(6.0, 0.22)
 
@@ -445,7 +497,7 @@ func _on_end_turn_pressed() -> void:
 func _on_enemy_phase_changed(new_phase: int) -> void:
 	var msg := "PHASE 2!" if new_phase == 2 else "ENRAGED!"
 	var color := Color(1.0, 0.7, 0.1) if new_phase == 2 else Color(1.0, 0.2, 0.2)
-	_spawn_number(msg, _enemy.get_global_rect().get_center() + Vector2(0, -40), color)
+	_spawn_number(msg, _enemy.get_sprite_global_center() + Vector2(0, -40), color)
 	_shake_screen(10.0, 0.3)
 
 

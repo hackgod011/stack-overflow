@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_infinite_loop"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_infinite_loop"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_il"]
+[ext_resource type="Texture2D" uid="uid://ciy6y87s26d3c" path="res://assets/sprites/enemies/infinite_loop.png" id="2_il"]
 
 [resource]
 script = ExtResource("1_il")
@@ -8,3 +9,8 @@ name = "Infinite Loop"
 max_hp = 45
 attack_pattern = [4, 4, 4, 4, 4]
 heal_per_turn = 3
+sprite_sheet = ExtResource("2_il")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.0

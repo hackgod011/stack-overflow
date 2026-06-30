@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_stk_ovflw"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_stk_ovflw"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_so"]
+[ext_resource type="Texture2D" uid="uid://bphxl1bacqqw7" path="res://assets/sprites/enemies/stack_overflow_enemy.png" id="2_so"]
 
 [resource]
 script = ExtResource("1_so")
@@ -8,3 +9,8 @@ name = "Stack Overflow"
 max_hp = 70
 attack_pattern = [7, 7, 7, 14]
 inflicts_weak = 2
+sprite_sheet = ExtResource("2_so")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 3.6

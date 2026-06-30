@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://enemy_compiler1"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3 uid="uid://enemy_compiler1"]
 
 [ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_tc"]
+[ext_resource type="Texture2D" uid="uid://pqiwkdxf8nc0" path="res://assets/sprites/enemies/the_compiler.png" id="2_tc"]
 
 [resource]
 script = ExtResource("1_tc")
@@ -23,3 +24,9 @@ phase3_inflicts_vulnerable = 1
 phase3_inflicts_weak = 2
 phase3_heal_per_turn = 5
 phase3_min_damage_threshold = 5
+sprite_sheet = ExtResource("2_tc")
+sheet_hframes = 1
+sheet_vframes = 1
+idle_frames = PackedInt32Array(0)
+sprite_scale = 4.4
+phase_tints = PackedColorArray(1, 1, 1, 1, 1, 0.7, 0.4, 1, 1, 0.35, 0.35, 1)

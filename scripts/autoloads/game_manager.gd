@@ -14,6 +14,9 @@ const SETTINGS_SCENE := "res://scenes/ui/settings_screen.tscn"
 const HISTORY_SCENE := "res://scenes/ui/run_history_screen.tscn"
 const CARD_LIBRARY_SCENE := "res://scenes/ui/card_library_screen.tscn"
 
+# In-progress run save (local-first; survives reload via browser storage)
+const _RUN_SAVE := "user://current_run.json"
+
 # Starter deck cards
 const STRIKE_DATA := preload("res://data/cards/strike.tres")
 const DEFEND_DATA := preload("res://data/cards/defend.tres")
@@ -74,6 +77,8 @@ var run_start_time: float = 0.0
 var deck: Array[CardData] = []
 var current_enemy_data: EnemyData = null
 var is_run_active: bool = false
+## Guards against double-logging a run to history (game-over vs. abandon).
+var run_recorded: bool = false
 
 signal run_started
 
@@ -83,27 +88,58 @@ func _ready() -> void:
 
 
 func _setup_cursor() -> void:
-	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	# Terminal-green crosshair with a centered hotspot. Four arms with a small
+	# gap around the middle plus a center dot, all wrapped in a dim halo so it
+	# stays visible on both light and dark backgrounds.
+	const SIZE := 32
+	const CENTER := 16        # hotspot
+	const ARM_OUTER := 14     # arms reach this far from center
+	const GAP := 4            # clear space around the exact center
+	var img := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	var cur := Color(0.12, 0.95, 0.42, 1.0)
-	var dim := Color(0.06, 0.50, 0.22, 0.7)
-	# Arrow shape: left column + top row + diagonal
-	for y in 16:
-		img.set_pixel(0, y, cur)
-	for x in 12:
-		img.set_pixel(x, 0, cur)
-	for d in 12:
-		img.set_pixel(d, d, cur)
-		if d > 0:
-			img.set_pixel(d - 1, d, dim)
-			img.set_pixel(d, d - 1, dim)
-	# Fill arrow body (triangle between axes and diagonal)
-	for y in range(1, 12):
-		for x in range(1, y):
-			if img.get_pixel(x, y).a < 0.1:
-				img.set_pixel(x, y, Color(0.04, 0.18, 0.09, 0.3))
+	var dim := Color(0.02, 0.22, 0.10, 0.85)
+
+	# Halo helper: lay a dim pixel only where nothing brighter sits yet.
+	var halo := func(px: int, py: int) -> void:
+		if px < 0 or py < 0 or px >= SIZE or py >= SIZE:
+			return
+		if img.get_pixel(px, py).a < 0.1:
+			img.set_pixel(px, py, dim)
+
+	# Solid pixel + surrounding halo.
+	var plot := func(px: int, py: int) -> void:
+		for oy in range(-1, 2):
+			for ox in range(-1, 2):
+				halo.call(px + ox, py + oy)
+
+	# Draw the four arms (2px thick) with a center gap.
+	for t in range(0, 2):
+		var off := CENTER - 1 + t
+		for r in range(GAP, ARM_OUTER + 1):
+			plot.call(CENTER - r, off)   # left
+			plot.call(CENTER + r, off)   # right
+			plot.call(off, CENTER - r)   # up
+			plot.call(off, CENTER + r)   # down
+	# Center aiming dot.
+	for dy in range(-1, 1):
+		for dx in range(-1, 1):
+			plot.call(CENTER + dx, CENTER + dy)
+
+	# Paint the bright cores over the halo.
+	for t in range(0, 2):
+		var off := CENTER - 1 + t
+		for r in range(GAP, ARM_OUTER + 1):
+			img.set_pixel(CENTER - r, off, cur)
+			img.set_pixel(CENTER + r, off, cur)
+			img.set_pixel(off, CENTER - r, cur)
+			img.set_pixel(off, CENTER + r, cur)
+	for dy in range(-1, 1):
+		for dx in range(-1, 1):
+			img.set_pixel(CENTER + dx, CENTER + dy, cur)
+
 	var tex := ImageTexture.create_from_image(img)
-	Input.set_custom_mouse_cursor(tex, Input.CURSOR_ARROW, Vector2(0, 0))
+	Input.set_custom_mouse_cursor(tex, Input.CURSOR_ARROW, Vector2(CENTER, CENTER))
 
 
 func start_new_run(run_seed: int = -1) -> void:
@@ -121,10 +157,133 @@ func start_new_run(run_seed: int = -1) -> void:
 	run_start_time = Time.get_ticks_msec() / 1000.0
 	current_enemy_data = null
 	is_run_active = true
+	run_recorded = false
 	deck = _build_starter_deck()
 	# Assign art textures to all cards in the pool (once per run start)
 	CardArtLoader.apply_art(ALL_CARDS)
+	clear_saved_run()
+	# A fresh run resets the card collection to the starter cards.
+	CollectionManager.reset_to_starters()
 	run_started.emit()
+
+
+## Log the current run to history exactly once (win, loss, or abandon).
+func record_current_run(won: bool) -> void:
+	if run_recorded or not is_run_active:
+		return
+	run_recorded = true
+	is_run_active = false
+	var duration := Time.get_ticks_msec() / 1000.0 - run_start_time
+	HistoryManager.record_run(
+		floors_cleared, enemies_defeated, total_damage_dealt,
+		current_seed, duration, won,
+	)
+	clear_saved_run()
+
+
+## --- In-progress run persistence (resume across sessions) ---
+
+func has_saved_run() -> bool:
+	return FileAccess.file_exists(_RUN_SAVE)
+
+
+## Live summary of the in-progress run (for the "ACTIVE" row in run history).
+## Reads in-memory state if a run is loaded, else peeks the saved file.
+## Returns {} when there is no run in progress.
+func get_active_run_summary() -> Dictionary:
+	if is_run_active:
+		return {
+			"floor": floors_cleared,
+			"enemies": enemies_defeated,
+			"damage": total_damage_dealt,
+			"duration": int(Time.get_ticks_msec() / 1000.0 - run_start_time),
+		}
+	if FileAccess.file_exists(_RUN_SAVE):
+		var f := FileAccess.open(_RUN_SAVE, FileAccess.READ)
+		if f != null:
+			var p = JSON.parse_string(f.get_as_text())
+			f.close()
+			if p is Dictionary:
+				return {
+					"floor": int(p.get("floors_cleared", 0)),
+					"enemies": int(p.get("enemies_defeated", 0)),
+					"damage": int(p.get("total_damage_dealt", 0)),
+					"duration": int(p.get("elapsed", 0.0)),
+				}
+	return {}
+
+
+func get_card_by_id(id: StringName) -> CardData:
+	for card: CardData in ALL_CARDS:
+		if card.id == id:
+			return card
+	return null
+
+
+## Checkpoint the current run to disk (called from the map between floors).
+func save_run() -> void:
+	if not is_run_active:
+		return
+	var deck_ids: Array = []
+	for card: CardData in deck:
+		deck_ids.append(String(card.id))
+	var data := {
+		"seed": current_seed,
+		"player_hp": player_hp,
+		"player_max_hp": player_max_hp,
+		"gold": gold,
+		"current_floor": current_floor,
+		"floors_cleared": floors_cleared,
+		"enemies_defeated": enemies_defeated,
+		"total_damage_dealt": total_damage_dealt,
+		"elapsed": Time.get_ticks_msec() / 1000.0 - run_start_time,
+		"deck": deck_ids,
+	}
+	var file := FileAccess.open(_RUN_SAVE, FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify(data, "\t"))
+	file.close()
+
+
+## Restore a saved run into memory. Returns true on success.
+func load_saved_run() -> bool:
+	if not FileAccess.file_exists(_RUN_SAVE):
+		return false
+	var file := FileAccess.open(_RUN_SAVE, FileAccess.READ)
+	if file == null:
+		return false
+	var text := file.get_as_text()
+	file.close()
+	var parsed = JSON.parse_string(text)
+	if not (parsed is Dictionary):
+		return false
+	current_seed = int(parsed.get("seed", 0))
+	RNG.seed_run(current_seed)
+	player_max_hp = int(parsed.get("player_max_hp", 80))
+	player_hp = int(parsed.get("player_hp", player_max_hp))
+	gold = int(parsed.get("gold", 0))
+	current_floor = int(parsed.get("current_floor", 0))
+	floors_cleared = int(parsed.get("floors_cleared", 0))
+	enemies_defeated = int(parsed.get("enemies_defeated", 0))
+	total_damage_dealt = int(parsed.get("total_damage_dealt", 0))
+	run_start_time = Time.get_ticks_msec() / 1000.0 - float(parsed.get("elapsed", 0.0))
+	var restored: Array[CardData] = []
+	for id in parsed.get("deck", []):
+		var card := get_card_by_id(StringName(id))
+		if card != null:
+			restored.append(card)
+	deck = restored
+	CardArtLoader.apply_art(ALL_CARDS)
+	is_run_active = true
+	run_recorded = false
+	return true
+
+
+func clear_saved_run() -> void:
+	var dir := DirAccess.open("user://")
+	if dir != null and dir.file_exists("current_run.json"):
+		dir.remove("current_run.json")
 
 
 func get_enemy_for_floor(floor: int) -> EnemyData:

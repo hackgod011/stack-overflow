@@ -16,6 +16,8 @@ func _ready() -> void:
 	_title_label.text = "Floor %d / 15 cleared" % GameManager.current_floor
 	_quit_button.pressed.connect(_on_quit_pressed)
 	_build_map()
+	# Checkpoint the run so it can be resumed later (survives reload).
+	GameManager.save_run()
 
 
 func _build_map() -> void:
@@ -98,6 +100,8 @@ func _floor_color(floor: int) -> Color:
 
 func _on_quit_pressed() -> void:
 	AudioManager.play_button_click()
+	# Exit to menu WITHOUT ending the run — it stays resumable via "Resume Run".
+	GameManager.save_run()
 	get_tree().change_scene_to_file(GameManager.MAIN_MENU_SCENE)
 
 

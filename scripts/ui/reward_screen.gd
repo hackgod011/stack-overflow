@@ -48,6 +48,7 @@ func _build_card_offers() -> void:
 func _on_card_picked(card: CardData) -> void:
 	AudioManager.play_button_click()
 	GameManager.deck.append(card)
+	CollectionManager.discover_card(card)
 	get_tree().change_scene_to_file(GameManager.MAP_SCENE)
 
 
