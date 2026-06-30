@@ -9,7 +9,7 @@ extends Control
 # Constants
 const FLOATING_NUMBER = preload("res://scenes/ui/floating_number.tscn")
 const CARD_BURST = preload("res://scenes/ui/card_burst.tscn")
-const IMPACT_FX := preload("res://Resources/UI Elements & Icons/Fantasy Battle Pack/Effects/CriticalHit.png")
+const IMPACT_FX := preload("res://assets/sprites/effects/CriticalHit.png")
 const NULL_POINTER_FALLBACK := preload("res://data/enemies/null_pointer.tres")
 const MAX_ENERGY := 3
 const DRAW_COUNT := 5

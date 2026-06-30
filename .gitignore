@@ -10,3 +10,5 @@ export.cfg
 Thumbs.db
 # IDE
 .vscode/
+# Unused source asset packs — referenced assets are copied into assets/ instead
+/Resources/
