@@ -1,0 +1,82 @@
+name: Deploy game to GitHub Pages
+
+# Runs on every push to main, and can also be triggered manually from the Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissions the deploy job needs to publish to GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# If you push twice quickly, cancel the older run so only the newest ships.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.4.1
+  EXPORT_PRESET: "Web"
+
+jobs:
+  build:
+    name: Export Godot Web build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Godot ${{ env.GODOT_VERSION }} (headless) and export templates
+        run: |
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          echo "Downloading Godot editor..."
+          curl -L -o godot.zip "${BASE}/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          echo "Downloading export templates..."
+          curl -L -o templates.tpz "${BASE}/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+
+          # Install the editor binary
+          unzip -o godot.zip -d godot_bin
+          mv godot_bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+
+          # Install export templates to the location Godot expects
+          unzip -o templates.tpz -d templates_extracted
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TEMPLATE_DIR"
+          mv templates_extracted/templates/* "$TEMPLATE_DIR/"
+
+          godot --version
+
+      - name: Import project resources
+        # First pass lets Godot generate the .godot import cache in a clean checkout.
+        run: godot --headless --import --quit || true
+
+      - name: Export Web build
+        run: |
+          mkdir -p exports/web
+          godot --headless --export-release "${EXPORT_PRESET}" exports/web/index.html
+          echo "Exported files:"
+          ls -la exports/web
+
+      - name: Verify export produced index.html
+        run: test -f exports/web/index.html || (echo "Export failed: index.html not found" && exit 1)
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: exports/web
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
