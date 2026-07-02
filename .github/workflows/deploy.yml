@@ -65,6 +65,10 @@ jobs:
         run: |
           test -f exports/web/index.html || { echo "Export failed - index.html not found"; exit 1; }
 
+      - name: Configure GitHub Pages
+        # Initializes the Pages deployment target so the deploy step has somewhere to publish.
+        uses: actions/configure-pages@v5
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
