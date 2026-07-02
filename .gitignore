@@ -14,3 +14,4 @@ Thumbs.db
 /Resources/
 # Project planning/handoff docs — kept local, not published
 *.md
+!README.md
