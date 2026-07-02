@@ -62,7 +62,8 @@ jobs:
           ls -la exports/web
 
       - name: Verify export produced index.html
-        run: test -f exports/web/index.html || (echo "Export failed: index.html not found" && exit 1)
+        run: |
+          test -f exports/web/index.html || { echo "Export failed - index.html not found"; exit 1; }
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
