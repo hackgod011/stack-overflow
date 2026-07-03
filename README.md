@@ -15,7 +15,6 @@
 ## ▶ Play
 
 - **Play now (GitHub Pages):** **<https://hackgod011.github.io/stack-overflow/>** — deployed automatically from `main` via GitHub Actions.
-- **itch.io page:** _pending (Phase 8.2)_ — link will go here once published.
 - **Run the web build locally:**
   ```bash
   # from the repo root, after exporting to exports/web/
@@ -122,7 +121,7 @@ Built phase by phase from a written implementation plan (`implementation_plan.md
 | 5 | Visual polish — shaders, screen shake, typography, art | ✅ |
 | 6 | Web optimization & cross-browser pass | ✅ |
 | 7 | Meta-features — settings, run history, card library, achievements | ✅ |
-| 8 | Ship & share — QA, README, portfolio | 🚧 (in progress — **live on [GitHub Pages](https://hackgod011.github.io/stack-overflow/)**) |
+| 8 | Ship & share — QA, README, portfolio | ✅ (**live on [GitHub Pages](https://hackgod011.github.io/stack-overflow/)**) |
 
 > Note: the Compatibility renderer's WASM binary (~51 MB) is engine-fixed; the gameplay payload (`.pck`) is ~14–17 MB. See [`perf_baseline.md`](perf_baseline.md).
 
